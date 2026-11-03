@@ -3,16 +3,16 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 *Note for AI Agent: The sections below are an initial baseline; feel free to add, merge, or remove sections as the project evolves.*
 
 ## Current State
-- v0.0.0: bare Vite + React + TS scaffold (`src/` has only `App.tsx`, `main.tsx`, `index.css`). No feature code yet.
-- Requirements done: SRS and SVD v1.0 (13/10/2026) in `docs/`, in Spanish. `docs/constitution.md` and `AGENTS.md` defined. No specs in `docs/specs/` yet.
-- Installed: React 19.2, Vite 8, TS 6, ESLint 10, React Compiler. Not installed yet: TanStack Router, Zustand, RHF, Zod, Bootstrap/react-bootstrap, Vitest/RTL, Playwright.
-- Scripts present: `dev`, `build`, `lint`, `preview`. Missing: `typecheck`, `test`, `e2e`.
-- Persistence: none yet. MVP will use `localStorage` (`tbt:v1:*`) behind repositories; backend lives in a separate future repo.
+- `000-foundation` fully implemented & verified (all 5 quality gates pass). Spec status: `implemented`.
+- Installed: React 19.2, Vite 8, TS 6, ESLint 10, React Compiler, TanStack Router, Zustand, RHF, Zod, Bootstrap/react-bootstrap, Vitest/RTL, Playwright.
+- Scripts active: `dev`, `build`, `lint`, `preview`, `typecheck`, `test`, `test:watch`, `e2e`.
+- Foundation established: Canonical Zod schemas (Appendix B), domain error classes (`AppError`), pure date-time utilities (pure timezone-aware), Spanish localization (`es.ts`), and resilient `LocalStorageAdapter` (`tbt:v1:*`).
+- Persistence: `LocalStorageAdapter` with safe two-phase parsing (`JSON.parse` + Zod `.safeParse()`).
 
 ## Learnings & Pitfalls to Avoid
 - Browser notifications are best-effort (no guarantee on iOS without home-screen install or with browser closed); every alert must also land in the notification center.
-- Verify that `tsc -b --noEmit` works with the Vite `tsconfig.*` setup when adding the `typecheck` script.
-- (Add new learnings here.)
+- Verified: `tsc -b --noEmit` works cleanly with Vite solution tsconfig setup (`tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.test.json`). In TS 6+, omit deprecated `baseUrl` when configuring `paths` under `bundler` resolution.
+- TypeScript `erasableSyntaxOnly` mode forbids constructor parameter properties (`constructor(public readonly x: string)`); declare class fields explicitly.
 
 ## Decisions (and Why)
 - Frontend-only MVP on `localStorage` behind repository interfaces: backend is a separate repo, so swapping to an API must not touch features.
@@ -25,6 +25,5 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 - `src/features/tasks/` is the first feature and becomes the golden reference.
 
 ## Next Steps
-- Ask owner, then install missing dependencies and add `typecheck`, `test`, `e2e` scripts; set up Vitest + RTL and the `tests/` layout.
 - Create `docs/specs/001-tasks/` (`spec.md` -> `plan.md` -> `tasks.md`) from RF-12 to RF-16 and implement it as the golden reference.
 - Define the simulated auth approach (password hashing, session, recovery codes; RF-01 to RF-03) before the auth spec.

@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: [⚠️ Ask First] Runtime & Testing Dependencies Installation**
+- [x] **T1: [⚠️ Ask First] Runtime & Testing Dependencies Installation**
   - **Associated Requirements:** `REQ-FD-20`, `AC-FD-08`
   - **User Confirmation Flag:** `⚠️ Requires User Confirmation` (Package installation touches `package.json` and `package-lock.json`)
   - **Files Touched:**
@@ -24,7 +24,7 @@
   - **Done when:** All specified packages appear in `package.json` under `dependencies` and `devDependencies`, and `npm ls` resolves without unmet peer dependencies.
   - **Verification Command:** `npm run lint`
 
-- [ ] **T2: [⚠️ Ask First] Test Harness Configuration & Tooling Scripts**
+- [x] **T2: [⚠️ Ask First] Test Harness Configuration & Tooling Scripts**
   - **Associated Requirements:** `REQ-FD-18`, `REQ-FD-19`, `REQ-FD-21`, `AC-FD-08`
   - **User Confirmation Flag:** `⚠️ Requires User Confirmation` (Modifies `package.json`, `eslint.config.js`, creates `vitest.config.ts`, `playwright.config.ts`)
   - **Files Touched:**
@@ -50,7 +50,7 @@
   - **Done when:** `npm test` executes Vitest and reports 0 errors; `npm run lint` executes ESLint without warnings.
   - **Verification Command:** `npm test && npm run lint`
 
-- [ ] **T3: [⚠️ Ask First] TypeScript Solution Configuration for Test Isolation**
+- [x] **T3: [⚠️ Ask First] TypeScript Solution Configuration for Test Isolation**
   - **Associated Requirements:** `REQ-FD-18`, `REQ-FD-19`, `REQ-FD-21`, `AC-FD-08`
   - **User Confirmation Flag:** `⚠️ Requires User Confirmation` (Modifies `tsconfig.json`, creates `tsconfig.test.json`)
   - **Files Touched:**
@@ -65,7 +65,7 @@
   - **Done when:** `npm run typecheck` (`tsc -b --noEmit`) succeeds across `tsconfig.app.json`, `tsconfig.node.json`, and `tsconfig.test.json` without type leakage.
   - **Verification Command:** `npm run typecheck`
 
-- [ ] **T4: Base Architecture Folder Layout Scaffolding**
+- [x] **T4: Base Architecture Folder Layout Scaffolding**
   - **Associated Requirements:** `REQ-FD-17`, `REQ-FD-19`
   - **User Confirmation Flag:** Standard Task (no root config modification)
   - **Files Touched:**
@@ -92,7 +92,7 @@
   - **Done when:** Folder structure matches `plan.md` Section 1.1 and all index files typecheck and pass linting.
   - **Verification Command:** `npm run typecheck && npm run lint`
 
-- [ ] **T5: Centralized Spanish Localization Baseline (`i18n/es.ts`)**
+- [x] **T5: Centralized Spanish Localization Baseline (`i18n/es.ts`)**
   - **Associated Requirements:** `REQ-FD-14`, `REQ-FD-17`, `UI-01`, `RNF-12`, `AC-FD-07`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**
@@ -107,7 +107,7 @@
   - **Done when:** All tests in `es.test.ts` pass, all strings are in Spanish, and no hardcoded English strings exist.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Controlled Domain Error Classes & Taxonomy**
+- [x] **T6: Controlled Domain Error Classes & Taxonomy**
   - **Associated Requirements:** `REQ-FD-04`, `REQ-FD-05`, `REQ-FD-06`, `RNF-07`, `RNF-18`, `AC-FD-04`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**
@@ -122,7 +122,7 @@
   - **Done when:** All 6 domain error classes exist with appropriate error codes, messages, and inherit from `AppError` and native `Error`.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: Canonical Zod Schemas & Appendix B Limits**
+- [x] **T7: Canonical Zod Schemas & Appendix B Limits**
   - **Associated Requirements:** `REQ-FD-01`, `REQ-FD-02`, `REQ-FD-03`, `REQ-FD-10b`, `REQ-FD-11`, `REQ-FD-12`, `REQ-FD-13`, `RF-22`, `RNF-05`, `RNF-19`, `RNF-20`, `AC-FD-01`, `AC-FD-02`, `AC-FD-03`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**
@@ -150,7 +150,7 @@
   - **Done when:** All Zod schemas pass validation boundary tests, export TypeScript interfaces matching `spec.md` Section 4.2 with zero `any`, and emit localized Spanish validation error messages.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Pure Date & Time Utilities**
+- [x] **T8: Pure Date & Time Utilities**
   - **Associated Requirements:** `REQ-FD-14`, `REQ-FD-15`, `REQ-FD-16`, `REQ-FD-18`, `RF-28`, `UI-07`, `RNF-14`, `AC-FD-06`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**
@@ -170,7 +170,7 @@
   - **Done when:** All date/time tests pass across multiple timezones (e.g. `America/Bogota`, `UTC`, `America/New_York`) deterministically without mocking global `Date`.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T9: Storage Adapter, Safe Parsing & Repository Contracts**
+- [x] **T9: Storage Adapter, Safe Parsing & Repository Contracts**
   - **Associated Requirements:** `REQ-FD-07`, `REQ-FD-08`, `REQ-FD-09`, `REQ-FD-10`, `RNF-07`, `RNF-18`, `AC-FD-05`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**
@@ -197,7 +197,7 @@
   - **Done when:** `LocalStorageAdapter` passes all tests, successfully shields domain features from raw `localStorage`, and handles corrupt data gracefully.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T10: Complete Verification Gates Execution & Smoke Test**
+- [x] **T10: Complete Verification Gates Execution & Smoke Test**
   - **Associated Requirements:** `REQ-FD-21`, `AC-FD-08`, `Constitution Principles 1–6`
   - **User Confirmation Flag:** Standard Task
   - **Files Touched:**

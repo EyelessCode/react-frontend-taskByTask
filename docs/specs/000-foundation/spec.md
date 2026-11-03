@@ -1,7 +1,7 @@
 # Spec 000: Foundation and Core Domain Contracts
 
 - **Feature Name:** `000-foundation`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-10-29
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RNF-05`, `RNF-07`, `RNF-12`, `RNF-14`, `RNF-15`, `RNF-18`, `RNF-19`, `RNF-20`, `UI-01`, `UI-07`, `RF-22`, `RF-28`, `Appendix B`, `Constitution Principles 1–6`
