@@ -264,6 +264,7 @@ export interface Task {
   title: string;                  // 2-100 chars
   description?: string | null;    // 0-750 chars
   groupId: string;                // References Group.id
+  tagIds?: string[];              // References Tag.id (RF-22)
   completed: boolean;
   createdAt: string;              // ISO-8601 string (read-only, immutable)
   completedAt?: string | null;    // ISO-8601 string when completed
