@@ -10,6 +10,7 @@ import {
   sessionSchema,
   groupSchema,
   groupMemberSchema,
+  SEED_PERSONAL_GROUP,
   taskSchema,
   subtaskSchema,
   reminderSchema,
@@ -262,6 +263,18 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         }).success,
       ).toBe(true);
     });
+
+    it('should validate canonical SEED_PERSONAL_GROUP constant', () => {
+      const result = groupSchema.safeParse(SEED_PERSONAL_GROUP);
+      expect(result.success).toBe(true);
+      expect(SEED_PERSONAL_GROUP.id).toBe('group-personal');
+      expect(SEED_PERSONAL_GROUP.name).toBe('Personal');
+      expect(SEED_PERSONAL_GROUP.isPersonal).toBe(true);
+      expect(SEED_PERSONAL_GROUP.type).toBe('individual');
+      expect(SEED_PERSONAL_GROUP.creatorId).toBe('local-user');
+      expect(SEED_PERSONAL_GROUP.members).toHaveLength(1);
+      expect(SEED_PERSONAL_GROUP.members[0].role).toBe('creator');
+    });
   });
 
   describe('Task and Subtask validation (RNF-20)', () => {
@@ -274,6 +287,22 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         createdAt: '2026-11-02T12:00:00.000Z',
       };
       expect(taskSchema.safeParse(task).success).toBe(true);
+    });
+
+    it('should validate Task with tagIds array', () => {
+      const task: Task = {
+        id: 'tsk-tags',
+        title: 'Tarea con etiquetas',
+        groupId: 'grp-1',
+        tagIds: ['tag-1', 'tag-2'],
+        completed: false,
+        createdAt: '2026-11-02T12:00:00.000Z',
+      };
+      const result = taskSchema.safeParse(task);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.tagIds).toEqual(['tag-1', 'tag-2']);
+      }
     });
 
     it('should validate complete Task with dates, assigneeId, subtasks, and reminders', () => {

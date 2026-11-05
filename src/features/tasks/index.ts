@@ -1,4 +1,8 @@
 /**
  * Tasks feature module barrel.
  */
-export {};
+export * from './schemas';
+export * from './utils';
+export * from './store';
+export * from './hooks';
+export * from './components';

@@ -1,7 +1,7 @@
 # Spec 001: Tasks Management (Golden Reference)
 
 - **Feature Name:** `001-tasks`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-03
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-12`, `RF-13`, `RF-14`, `RF-15`, `RF-16`, `RF-22` (subset), `UI-01`, `UI-03`, `UI-04`, `UI-06`, `UI-07`, `RNF-01`, `RNF-07`, `RNF-12`, `RNF-14`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix B`, `Constitution Principles 1–6`

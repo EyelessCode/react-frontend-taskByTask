@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Schema Updates & Spanish Localization Extension**
+- [x] **T1: Schema Updates & Spanish Localization Extension**
   - **Associated Requirements:** `REQ-TK-01`, `REQ-TK-04`, `REQ-TK-05`, `REQ-TK-30`, `REQ-TK-32`, `AC-TK-01`, `AC-TK-06`
   - **Files Touched:**
     - `tests/unit/shared/schemas/limits.test.ts` (modified - add tests for task `tagIds` and seed group)
@@ -20,7 +20,7 @@
   - **Done when:** `taskSchema` accepts `tagIds?: string[]`, `SEED_PERSONAL_GROUP` validates against `groupSchema`, and `es.tasks` passes dictionary typechecks with 100% Spanish text.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Deterministic Sorting Utility (`task-sort.ts`)**
+- [x] **T2: Deterministic Sorting Utility (`task-sort.ts`)**
   - **Associated Requirements:** `REQ-TK-16`, `REQ-TK-17`, `RF-15`, `AC-TK-07`
   - **Files Touched:**
     - `tests/unit/features/tasks/task-sort.test.ts` (created)
@@ -35,7 +35,7 @@
   - **Done when:** `compareTasks` and `sortTasksByFilter` satisfy all sorting rules with 100% test coverage.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: Repositories & Data Access Layer (`TaskRepository`, `GroupRepository`, `TagRepository`)**
+- [x] **T3: Repositories & Data Access Layer (`TaskRepository`, `GroupRepository`, `TagRepository`)**
   - **Associated Requirements:** `REQ-TK-02`, `REQ-TK-06`, `REQ-TK-08`, `REQ-TK-22`, `REQ-TK-30`, `REQ-TK-31`, `AC-TK-01`, `AC-TK-08`, `AC-TK-09`
   - **Files Touched:**
     - `tests/unit/data/local-storage-task-repository.test.ts` (created)
@@ -56,7 +56,7 @@
   - **Done when:** Repositories persist data via `LocalStorageAdapter` (`tbt:v1:*`), return `NotFoundError` on missing entities, and pass all repository unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Task Form Validation Schema (`task-form-schema.ts`)**
+- [x] **T4: Task Form Validation Schema (`task-form-schema.ts`)**
   - **Associated Requirements:** `REQ-TK-01`, `REQ-TK-04`, `REQ-TK-05`, `AC-TK-01`
   - **Files Touched:**
     - `tests/unit/features/tasks/task-form-schema.test.ts` (created)
@@ -71,7 +71,7 @@
   - **Done when:** `taskFormSchema` produces structured errors with localized Spanish error messages.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: Zustand Feature Store (`tasks-store.ts`) & Custom Hooks**
+- [x] **T5: Zustand Feature Store (`tasks-store.ts`) & Custom Hooks**
   - **Associated Requirements:** `REQ-TK-01`..`REQ-TK-03`, `REQ-TK-06`..`REQ-TK-10`, `REQ-TK-16`, `REQ-TK-17`, `REQ-TK-20`..`REQ-TK-23`, `REQ-TK-26`, `REQ-TK-30`, `AC-TK-01`..`AC-TK-04`, `AC-TK-08`..`AC-TK-10`
   - **Files Touched:**
     - `tests/unit/features/tasks/tasks-store.test.ts` (created)
@@ -92,7 +92,7 @@
   - **Done when:** Store and custom hooks manage state immutably without manual `useMemo`/`useCallback` boilerplate (leveraging React Compiler).
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Task Item & Visual Status Components (`TaskCard.tsx`, `TaskList.tsx`, `TaskFilterTabs.tsx`)**
+- [x] **T6: Task Item & Visual Status Components (`TaskCard.tsx`, `TaskList.tsx`, `TaskFilterTabs.tsx`)**
   - **Associated Requirements:** `REQ-TK-09`..`REQ-TK-15`, `REQ-TK-16`..`REQ-TK-18`, `REQ-TK-25`, `REQ-TK-27`..`REQ-TK-29`, `UI-01`, `UI-03`, `UI-04`, `RNF-12`, `AC-TK-04`..`AC-TK-07`
   - **Files Touched:**
     - `tests/integration/features/tasks/task-card.test.tsx` (created)
@@ -109,7 +109,7 @@
   - **Done when:** `TaskCard`, `TaskList`, and `TaskFilterTabs` render cleanly with 100% Spanish text and responsive Bootstrap styling.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: Task Creation, Editing & Tag Entry Modals (`TaskFormModal.tsx`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
+- [x] **T7: Task Creation, Editing & Tag Entry Modals (`TaskFormModal.tsx`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
   - **Associated Requirements:** `REQ-TK-01`..`REQ-TK-07`, `REQ-TK-24`, `REQ-TK-24b`..`REQ-TK-24d`, `REQ-TK-26`, `AC-TK-01`..`AC-TK-03`, `AC-TK-10`
   - **Files Touched:**
     - `tests/integration/features/tasks/task-form-modal.test.tsx` (created)
@@ -125,7 +125,7 @@
   - **Done when:** Modals support smooth keyboard navigation, visible focus, and clean validation error presentation.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Move, Copy & Delete Modals (`TaskMoveCopyModal.tsx`, `TaskDeleteConfirmModal.tsx`)**
+- [x] **T8: Move, Copy & Delete Modals (`TaskMoveCopyModal.tsx`, `TaskDeleteConfirmModal.tsx`)**
   - **Associated Requirements:** `REQ-TK-07`, `REQ-TK-08`, `REQ-TK-18`, `REQ-TK-19`, `REQ-TK-19b`, `REQ-TK-20`..`REQ-TK-23`, `UI-06`, `AC-TK-03`, `AC-TK-08`, `AC-TK-09`
   - **Files Touched:**
     - `tests/integration/features/tasks/task-move-copy-modal.test.tsx` (created)
@@ -140,7 +140,7 @@
   - **Done when:** Modals operate reliably, handle edge cases gracefully, and adhere to accessibility guidelines.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T9: Main Tasks View & Application Integration (`TasksView.tsx`, `src/App.tsx`, `src/main.tsx`)**
+- [x] **T9: Main Tasks View & Application Integration (`TasksView.tsx`, `src/App.tsx`, `src/main.tsx`)**
   - **Associated Requirements:** `REQ-TK-27`, `UI-01`, `UI-07`, `Constitution Principles 1–6`, `AC-TK-11`
   - **Files Touched:**
     - `tests/integration/features/tasks/tasks-view.test.tsx` (created)
@@ -153,7 +153,7 @@
   - **Done when:** `App.tsx` renders the full Golden Reference task interface with responsive Bootstrap styling without runtime or console errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T10: Complete Verification Gates & Playwright E2E Test**
+- [x] **T10: Complete Verification Gates & Playwright E2E Test**
   - **Associated Requirements:** `AC-TK-01` through `AC-TK-11`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
   - **Files Touched:**
     - `tests/e2e/tasks.spec.ts` (created)

@@ -52,6 +52,7 @@ export const taskSchema = z.object({
     .nullable()
     .optional(),
   groupId: idSchema,
+  tagIds: z.array(idSchema).default([]).optional(),
   completed: z.boolean(),
   createdAt: isoDateTimeSchema,
   completedAt: isoDateTimeSchema.nullable().optional(),
@@ -67,6 +68,7 @@ export interface Task {
   title: string;
   description?: string | null;
   groupId: string;
+  tagIds?: string[];
   completed: boolean;
   createdAt: string;
   completedAt?: string | null;

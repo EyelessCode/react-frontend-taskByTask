@@ -41,3 +41,19 @@ export interface Group {
   members: GroupMember[];
   createdAt: string;
 }
+
+export const SEED_PERSONAL_GROUP: Group = {
+  id: 'group-personal',
+  name: 'Personal',
+  creatorId: 'local-user',
+  isPersonal: true,
+  type: 'individual',
+  members: [
+    {
+      userId: 'local-user',
+      role: 'creator',
+      joinedAt: '2026-01-01T00:00:00.000Z',
+    },
+  ],
+  createdAt: '2026-01-01T00:00:00.000Z',
+};

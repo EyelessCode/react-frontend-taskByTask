@@ -34,6 +34,48 @@ export interface LocalizationDictionary {
     tomorrow: string;
     dateFormat: 'dd/mm/aaaa';
   };
+  tasks: TasksLocalization;
+}
+
+export interface TasksLocalization {
+  createTitle: string;
+  editTitle: string;
+  titleLabel: string;
+  titlePlaceholder: string;
+  descLabel: string;
+  descPlaceholder: string;
+  dueDateLabel: string;
+  dueTimeLabel: string;
+  tagsLabel: string;
+  tagsPlaceholder: string;
+  groupLabel: string;
+  filterPending: string;
+  filterCompleted: string;
+  filterAll: string;
+  actionMenuAria: string;
+  actionEdit: string;
+  actionMove: string;
+  actionCopy: string;
+  actionDelete: string;
+  deleteTitle: string;
+  deleteMessage: string;
+  confirmDelete: string;
+  cancelDelete: string;
+  moveTitle: string;
+  copyTitle: string;
+  selectGroupLabel: string;
+  noOtherGroups: string;
+  confirmMove: string;
+  confirmCopy: string;
+  tagOverflow: (count: number) => string;
+  removeTagTitle: string;
+  removeTagPrompt: (tagName: string) => string;
+  removeOnlyFromTask: string;
+  removeFromGroup: string;
+  badgeOverdue: string;
+  emptyPending: string;
+  emptyCompleted: string;
+  emptyAll: string;
 }
 
 export const es = {
@@ -71,5 +113,47 @@ export const es = {
     today: 'Hoy',
     tomorrow: 'Mañana',
     dateFormat: 'dd/mm/aaaa',
+  },
+  tasks: {
+    createTitle: 'Nueva tarea',
+    editTitle: 'Editar tarea',
+    titleLabel: 'Título',
+    titlePlaceholder: 'Escribe el título de la tarea',
+    descLabel: 'Descripción',
+    descPlaceholder: 'Añade una descripción (opcional)',
+    dueDateLabel: 'Fecha de caducidad',
+    dueTimeLabel: 'Hora de caducidad',
+    tagsLabel: 'Etiquetas',
+    tagsPlaceholder: 'Escribe una etiqueta y presiona coma o punto y coma',
+    groupLabel: 'Grupo',
+    filterPending: 'Pendientes',
+    filterCompleted: 'Completadas',
+    filterAll: 'Todas',
+    actionMenuAria: 'Opciones de la tarea',
+    actionEdit: 'Editar',
+    actionMove: 'Mover a…',
+    actionCopy: 'Copiar a…',
+    actionDelete: 'Eliminar',
+    deleteTitle: 'Eliminar tarea',
+    deleteMessage:
+      '¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.',
+    confirmDelete: 'Eliminar',
+    cancelDelete: 'Cancelar',
+    moveTitle: 'Mover tarea',
+    copyTitle: 'Copiar tarea',
+    selectGroupLabel: 'Seleccionar grupo destino',
+    noOtherGroups:
+      'No tienes otros grupos individuales disponibles para mover o copiar esta tarea.',
+    confirmMove: 'Mover',
+    confirmCopy: 'Copiar',
+    tagOverflow: (count: number) => `+${count} más`,
+    removeTagTitle: 'Quitar etiqueta',
+    removeTagPrompt: (tagName: string) => `¿Cómo deseas quitar la etiqueta "${tagName}"?`,
+    removeOnlyFromTask: 'Solo de la tarea',
+    removeFromGroup: 'Del grupo',
+    badgeOverdue: 'Vencida',
+    emptyPending: 'No hay tareas pendientes en este grupo',
+    emptyCompleted: 'No hay tareas completadas en este grupo',
+    emptyAll: 'No hay tareas en este grupo',
   },
 } as const satisfies LocalizationDictionary;

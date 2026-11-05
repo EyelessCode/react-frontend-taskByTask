@@ -10,6 +10,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
     expect(dict.validation).toBeDefined();
     expect(dict.errors).toBeDefined();
     expect(dict.dateTime).toBeDefined();
+    expect(dict.tasks).toBeDefined();
   });
 
   describe('app namespace', () => {
@@ -92,6 +93,63 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.dateTime.today).toBe('Hoy');
       expect(es.dateTime.tomorrow).toBe('Mañana');
       expect(es.dateTime.dateFormat).toBe('dd/mm/aaaa');
+    });
+  });
+
+  describe('tasks namespace', () => {
+    it('should contain all required task localization keys in Spanish', () => {
+      expect(es.tasks).toBeDefined();
+      expect(es.tasks.createTitle).toBe('Nueva tarea');
+      expect(es.tasks.editTitle).toBe('Editar tarea');
+      expect(es.tasks.titleLabel).toBe('Título');
+      expect(es.tasks.titlePlaceholder).toBe('Escribe el título de la tarea');
+      expect(es.tasks.descLabel).toBe('Descripción');
+      expect(es.tasks.descPlaceholder).toBe('Añade una descripción (opcional)');
+      expect(es.tasks.dueDateLabel).toBe('Fecha de caducidad');
+      expect(es.tasks.dueTimeLabel).toBe('Hora de caducidad');
+      expect(es.tasks.tagsLabel).toBe('Etiquetas');
+      expect(es.tasks.tagsPlaceholder).toBe('Escribe una etiqueta y presiona coma o punto y coma');
+      expect(es.tasks.groupLabel).toBe('Grupo');
+      expect(es.tasks.filterPending).toBe('Pendientes');
+      expect(es.tasks.filterCompleted).toBe('Completadas');
+      expect(es.tasks.filterAll).toBe('Todas');
+      expect(es.tasks.actionMenuAria).toBe('Opciones de la tarea');
+      expect(es.tasks.actionEdit).toBe('Editar');
+      expect(es.tasks.actionMove).toBe('Mover a…');
+      expect(es.tasks.actionCopy).toBe('Copiar a…');
+      expect(es.tasks.actionDelete).toBe('Eliminar');
+      expect(es.tasks.deleteTitle).toBe('Eliminar tarea');
+      expect(es.tasks.deleteMessage).toBe(
+        '¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.',
+      );
+      expect(es.tasks.confirmDelete).toBe('Eliminar');
+      expect(es.tasks.cancelDelete).toBe('Cancelar');
+      expect(es.tasks.moveTitle).toBe('Mover tarea');
+      expect(es.tasks.copyTitle).toBe('Copiar tarea');
+      expect(es.tasks.selectGroupLabel).toBe('Seleccionar grupo destino');
+      expect(es.tasks.noOtherGroups).toBe(
+        'No tienes otros grupos individuales disponibles para mover o copiar esta tarea.',
+      );
+      expect(es.tasks.confirmMove).toBe('Mover');
+      expect(es.tasks.confirmCopy).toBe('Copiar');
+      expect(es.tasks.removeTagTitle).toBe('Quitar etiqueta');
+      expect(es.tasks.removeOnlyFromTask).toBe('Solo de la tarea');
+      expect(es.tasks.removeFromGroup).toBe('Del grupo');
+      expect(es.tasks.badgeOverdue).toBe('Vencida');
+      expect(es.tasks.emptyPending).toBe('No hay tareas pendientes en este grupo');
+      expect(es.tasks.emptyCompleted).toBe('No hay tareas completadas en este grupo');
+      expect(es.tasks.emptyAll).toBe('No hay tareas en este grupo');
+    });
+
+    it('should format tag overflow indicator correctly', () => {
+      expect(es.tasks.tagOverflow(3)).toBe('+3 más');
+      expect(es.tasks.tagOverflow(1)).toBe('+1 más');
+    });
+
+    it('should format remove tag prompt message with tag name', () => {
+      expect(es.tasks.removeTagPrompt('trabajo')).toBe(
+        '¿Cómo deseas quitar la etiqueta "trabajo"?',
+      );
     });
   });
 });

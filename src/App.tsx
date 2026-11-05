@@ -1,8 +1,7 @@
+import { TasksView } from './features/tasks';
+
 function App() {
-  return (
-    <>
-    </>
-  )
+  return <TasksView />;
 }
 
-export default App
+export default App;
