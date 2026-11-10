@@ -1,0 +1,146 @@
+# Tasks Checklist: 002-groups (Groups Management & Grid View)
+
+- **Feature Name:** `002-groups`
+- **Spec Reference:** [`docs/specs/002-groups/spec.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/002-groups/spec.md) (Status: `approved`)
+- **Plan Reference:** [`docs/specs/002-groups/plan.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/002-groups/plan.md)
+
+---
+
+## Task List
+
+- [ ] **T1: Repository & Data Contract Extensions (`deleteByGroupId` on tasks and tags)**
+  - **Associated Requirements:** `REQ-GRP-10`, `REQ-GRP-11`, `REQ-GRP-11b`, `AC-GRP-04`, `AC-GRP-05`
+  - **Files Touched:**
+    - `tests/unit/data/local-storage-task-repository.test.ts` (modified - add unit tests for `deleteByGroupId`)
+    - `tests/unit/data/local-storage-tag-repository.test.ts` (modified - add unit tests for `deleteByGroupId`)
+    - `tests/unit/data/local-storage-group-repository.test.ts` (modified - verify delete error cases & Personal immutability)
+    - `src/data/contracts/task-repository.ts` (modified - declare `deleteByGroupId(groupId: string): Promise<void>`)
+    - `src/data/contracts/tag-repository.ts` (modified - declare `deleteByGroupId(groupId: string): Promise<void>`)
+    - `src/data/repositories/local-storage-task-repository.ts` (modified - implement `deleteByGroupId`)
+    - `src/data/repositories/local-storage-tag-repository.ts` (modified - implement `deleteByGroupId`)
+  - **TDD Test First:** Update repository unit tests to verify:
+    - `deleteByGroupId` removes all tasks/tags belonging to target `groupId` and preserves entities of other groups.
+    - Idempotency when deleting from a `groupId` with 0 tasks/tags.
+    - `GroupRepository.delete` retains rejection of `isPersonal === true` (`BusinessRuleViolationError`) and missing group (`NotFoundError`).
+  - **Done when:** `TaskRepository` and `TagRepository` implement `deleteByGroupId`, pass all repository unit tests, and maintain 100% backward compatibility with `000-foundation` and `001-tasks`.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T2: Spanish Localization Extension (`src/shared/i18n/es.ts`)**
+  - **Associated Requirements:** `REQ-GRP-24`, `AC-GRP-01`, `AC-GRP-03`, `AC-GRP-04`, `AC-GRP-05`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`
+  - **Files Touched:**
+    - `tests/unit/shared/i18n/es.test.ts` (modified - add tests validating `es.groups` namespace)
+    - `src/shared/i18n/es.ts` (modified - append `GroupsLocalization` type and `groups` dictionary)
+  - **TDD Test First:** Create unit test cases in `es.test.ts` verifying all dictionary keys defined in `spec.md` Section 4.6 are present, return non-empty strings or functions producing valid Spanish text:
+    - Labels: `gridTitle`, `createGroupButton`, `searchPlaceholder`, `filterGroupLabel`, `allGroupsOption`, `refreshButton`, `addTaskToGroup`, `personalBadge`, `actionRename`, `actionDelete`.
+    - Modals: `createModalTitle`, `renameModalTitle`, `nameLabel`, `namePlaceholder`, `deleteModalTitle`, `deleteModalWarning(groupName)`, `cannotDeletePersonal`.
+    - State & Alerts: `emptyGroupTasks`, `emptySearchGlobal`, `taskCount(count)`.
+  - **Done when:** `es.groups` compiles cleanly, satisfies `LocalizationDictionary` types, and passes unit tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T3: Pure Utilities (`group-sort.ts` & `filter-tasks.ts`)**
+  - **Associated Requirements:** `REQ-GRP-12b`, `REQ-GRP-13`, `REQ-GRP-17`, `REQ-GRP-18`, `REQ-GRP-19`, `REQ-GRP-20`, `REQ-GRP-21`, `AC-GRP-06`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`
+  - **Files Touched:**
+    - `tests/unit/features/groups/group-sort.test.ts` (created)
+    - `tests/unit/features/groups/filter-tasks.test.ts` (created)
+    - `src/features/groups/utils/group-sort.ts` (created)
+    - `src/features/groups/utils/filter-tasks.ts` (created)
+    - `src/features/groups/utils/index.ts` (created)
+  - **TDD Test First:** Create unit tests in `group-sort.test.ts` and `filter-tasks.test.ts` verifying:
+    - `compareGroups` and `sortGroups`: "Personal" group (`isPersonal === true`) always sorts first; all other groups sort ascending by `createdAt`; deterministic tie-breaker by `id` ascending (`REQ-GRP-12b`).
+    - `filterTasksByCriteria`: filters tasks by `groupId`, status filter (`'pendientes'`, `'completadas'`, `'todas'`), and case-insensitive substring title search (`REQ-GRP-17`..`REQ-GRP-21`).
+    - Validates that tasks returned are deterministically sorted via `sortTasksByFilter` (`REQ-GRP-13`).
+  - **Done when:** Pure utilities pass unit tests with 100% code coverage.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T4: Group Form Validation Schema (`group-form-schema.ts`)**
+  - **Associated Requirements:** `REQ-GRP-01`, `REQ-GRP-04`, `REQ-GRP-04b`, `REQ-GRP-07`, `AC-GRP-01`, `AC-GRP-02`, `AC-GRP-03`
+  - **Files Touched:**
+    - `tests/unit/features/groups/group-form-schema.test.ts` (created)
+    - `src/features/groups/schemas/group-form-schema.ts` (created)
+    - `src/features/groups/schemas/index.ts` (created)
+  - **TDD Test First:** Create `group-form-schema.test.ts` verifying:
+    - Accepts valid group names between 3 and 30 characters (`LIMITS.GROUP_NAME_MIN` and `LIMITS.GROUP_NAME_MAX`).
+    - Trims leading and trailing whitespace before evaluating length (`REQ-GRP-04b`).
+    - Rejects strings with < 3 characters with localized min-length error message (`REQ-GRP-04`).
+    - Rejects strings with > 30 characters with localized max-length error message (`REQ-GRP-04`).
+  - **Done when:** `groupFormSchema` provides type-safe `GroupFormInput` and passes unit tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T5: Zustand Groups Store (`groups-store.ts`) & Custom Hooks (`use-groups.ts`, `use-group-form.ts`)**
+  - **Associated Requirements:** `REQ-GRP-02`, `REQ-GRP-03`, `REQ-GRP-05`, `REQ-GRP-06`, `REQ-GRP-08`, `REQ-GRP-09`, `REQ-GRP-10`, `REQ-GRP-10b`, `REQ-GRP-11`, `REQ-GRP-11b`, `REQ-GRP-16`, `REQ-GRP-16b`, `AC-GRP-01`..`AC-GRP-05`, `AC-GRP-08`..`AC-GRP-12`
+  - **Files Touched:**
+    - `tests/unit/features/groups/groups-store.test.ts` (created)
+    - `src/features/groups/store/groups-store.ts` (created)
+    - `src/features/groups/store/index.ts` (created)
+    - `src/features/groups/hooks/use-groups.ts` (created)
+    - `src/features/groups/hooks/use-group-form.ts` (created)
+    - `src/features/groups/hooks/index.ts` (created)
+  - **TDD Test First:** Create `groups-store.test.ts` verifying:
+    - `init()` provisions `SEED_PERSONAL_GROUP` if absent, loads all groups, and hydrates tasks and tags across all groups (`REQ-GRP-16b`).
+    - `createGroup(name)` creates individual group with `creatorId: 'local-user'`, `isPersonal: false`, and single creator member (`REQ-GRP-05`, `REQ-GRP-06`).
+    - `renameGroup(groupId, newName)` updates group name in storage and local state (`REQ-GRP-08`).
+    - `deleteGroup(groupId)` invokes cascade deletion across group, tasks, and tags repositories, removes group tasks from `tasks-store`, and prunes `groupId` from `selectedGroupIds` (`REQ-GRP-10`, `REQ-GRP-10b`).
+    - `deleteGroup` throws `BusinessRuleViolationError` when attempting to delete the "Personal" group (`REQ-GRP-11`).
+    - `refresh()` re-queries storage for groups, tasks, and tags without page reload (`REQ-GRP-16`).
+    - Filter actions (`setSelectedGroupIds`, `toggleGroupId`, `setSearchQuery`, `setActiveFilter`) update state correctly.
+  - **Done when:** Store and hooks manage state immutably without React Compiler regressions and pass unit tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T6: Group Presentation Components (`GroupCard.tsx`, `GroupsFilterToolbar.tsx`, `GroupFormModal.tsx`, `GroupDeleteConfirmModal.tsx`)**
+  - **Associated Requirements:** `REQ-GRP-01`, `REQ-GRP-03`, `REQ-GRP-04`, `REQ-GRP-06`, `REQ-GRP-07`, `REQ-GRP-09`, `REQ-GRP-10`, `REQ-GRP-11`, `REQ-GRP-12`, `REQ-GRP-13`, `REQ-GRP-14`, `REQ-GRP-15`, `REQ-GRP-17`, `REQ-GRP-18`, `REQ-GRP-19`, `REQ-GRP-20`, `REQ-GRP-21`, `REQ-GRP-22`, `REQ-GRP-25`, `REQ-GRP-26`, `UI-02`, `UI-06`, `RNF-12`, `AC-GRP-01`..`AC-GRP-07`, `AC-GRP-12`
+  - **Files Touched:**
+    - `tests/integration/features/groups/group-card.test.tsx` (created)
+    - `src/features/groups/components/GroupCard.tsx` (created)
+    - `src/features/groups/components/GroupsFilterToolbar.tsx` (created)
+    - `src/features/groups/components/GroupFormModal.tsx` (created)
+    - `src/features/groups/components/GroupDeleteConfirmModal.tsx` (created)
+  - **TDD Test First:** Create `group-card.test.tsx` verifying:
+    - `GroupCard` renders group header, "Personal" badge (if personal), task count badge, and task list container (`.task-list`).
+    - Context menu shows "Renombrar" for all groups, and shows "Eliminar" only for non-personal groups (`REQ-GRP-11`).
+    - Context menu contains NO sharing or member management options (`REQ-GRP-06`).
+    - Renders `es.groups.emptyGroupTasks` when matching task count is 0 (`REQ-GRP-22`).
+    - "+ Nueva tarea" button on card opens `TaskFormModal` with group pre-selected (`REQ-GRP-15`).
+    - Modals render accessible forms with Spanish validation errors, keyboard trap, and confirm buttons.
+  - **Done when:** Components render with responsive Bootstrap styling, visible focus outlines, and pass integration tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T7: Main Groups Grid View & Application Integration (`GroupsGridView.tsx`, `src/App.tsx`, Feature Barrel)**
+  - **Associated Requirements:** `REQ-GRP-12`, `REQ-GRP-16`, `REQ-GRP-22`, `REQ-GRP-23`, `REQ-GRP-25`, `REQ-GRP-26`, `UI-02`, `Constitution Principles 1–6`, `AC-GRP-06`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`, `AC-GRP-13`
+  - **Files Touched:**
+    - `tests/integration/features/groups/groups-grid-view.test.tsx` (created)
+    - `tests/integration/features/groups/group-lifecycle.test.tsx` (created)
+    - `src/features/groups/components/GroupsGridView.tsx` (created)
+    - `src/features/groups/components/index.ts` (created)
+    - `src/features/groups/index.ts` (created)
+    - `src/App.tsx` (modified - mount `GroupsGridView` as primary application view)
+  - **TDD Test First:** Create integration tests in `groups-grid-view.test.tsx` and `group-lifecycle.test.tsx` testing:
+    - Renders responsive grid (`Row xs={1} md={2} lg={3}`) with sorted group cards.
+    - Title search across groups: when 0 tasks match globally, displays alert banner with `es.groups.emptySearchGlobal` (`REQ-GRP-23`).
+    - Multi-group selector toggles individual groups and resets on "Todos los grupos".
+    - Filter tabs ("Pendientes", "Completadas", "Todas") update visible tasks and badge counts across visible groups.
+    - End-to-end lifecycle: Create group -> Rename group -> Cascade delete group.
+    - Preserves test selectors expected by `tasks.spec.ts` (`heading 'Task by Task'`, `aria-label="Cambiar grupo activo"`, `header span.fw-semibold`, `.task-list .card`).
+  - **Done when:** `App.tsx` mounts `GroupsGridView` as default view and all unit and integration tests pass with 0 errors.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [ ] **T8: Complete Verification Gates, Regression Assurance & Playwright E2E Tests**
+  - **Associated Requirements:** `AC-GRP-01` through `AC-GRP-13`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
+  - **Files Touched:**
+    - `tests/e2e/groups.spec.ts` (created)
+    - `tests/e2e/tasks.spec.ts` (verified regression-free)
+  - **TDD Test First:** Create `tests/e2e/groups.spec.ts` with Playwright browser tests covering:
+    - Initial load displays "Personal" group card.
+    - Create new group "Universidad" -> appears in grid.
+    - Rename "Universidad" to "Facultad" -> card header updates.
+    - Create tasks in "Personal" and "Facultad".
+    - Search tasks across groups by title.
+    - Filter by group pill selector.
+    - Delete group "Facultad" through confirmation modal -> verifies group and its tasks are cascade-deleted.
+    - Verifies "Personal" group context menu does NOT offer "Eliminar".
+  - **Done when:**
+    - `npm run typecheck` (`tsc -b --noEmit`) passes with 0 errors.
+    - `npm run lint` (`eslint .`) passes with 0 errors and 0 warnings.
+    - `npm test` (`vitest run`) passes 100% of unit and integration tests (including existing `000-foundation` and `001-tasks` tests).
+    - `npm run build` (`tsc -b && vite build`) generates production bundle.
+    - `npm run e2e` (`playwright test`) passes both `tasks.spec.ts` and `groups.spec.ts`.
+  - **Verification Command:** `npm run typecheck && npm run lint && npm test && npm run build && npm run e2e`
