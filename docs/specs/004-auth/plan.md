@@ -1,8 +1,8 @@
 # Implementation Plan: `004-auth` (User Accounts, Authentication, Profile & Recovery)
 
 - **Feature Name:** `004-auth`
-- **Status:** Draft (Pending Implementation)
-- **Approved Spec:** [docs/specs/004-auth/spec.md](./spec.md) (`Status: approved`)
+- **Status:** implemented
+- **Approved Spec:** [docs/specs/004-auth/spec.md](./spec.md) (`Status: implemented`)
 - **Constitution:** [docs/constitution.md](../../constitution.md)
 - **Reference Patterns:** `src/features/tasks/` (golden reference), `src/features/groups/`
 

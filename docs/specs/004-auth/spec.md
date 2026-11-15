@@ -1,7 +1,7 @@
 # Spec 004: User Accounts, Authentication, Profile & Recovery
 
 - **Feature Name:** `004-auth`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-15
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-01`, `RF-02`, `RF-03`, `RF-04`, `RF-05`, `RF-06`, `UI-01`, `UI-06`, `UI-07`, `RNF-01`, `RNF-05`, `RNF-06`, `RNF-07`, `RNF-09`, `RNF-10`, `RNF-12`, `RNF-14`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix A`, `Appendix B`, `Appendix D`, `Constitution Principles 1–6`

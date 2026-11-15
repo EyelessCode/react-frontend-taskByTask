@@ -123,7 +123,7 @@
   - **Done when:** All Playwright E2E specs pass at both desktop and mobile viewports with zero console errors.
   - **Verification Command:** `npm run e2e`
 
-- [ ] **T11: Final Verification, Spec Closure & Memory Sync**
+- [x] **T11: Final Verification, Spec Closure & Memory Sync**
   - **Associated Requirements:** `Constitution Principle 6`, `AGENTS.md`
   - **Files Touched:**
     - `docs/specs/004-auth/spec.md` (modified — update `Status: implemented`)
