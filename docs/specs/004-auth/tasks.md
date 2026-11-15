@@ -21,7 +21,7 @@
   - **Done when:** `es.auth` compiles under `LocalizationDictionary`, `loginLockoutSchema` validates `normalizedEmail`/`failedAttempts`/`lockedUntil`, `crypto.subtle` works in Vitest, and all tests pass.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Pure Bijective `12h <-> 24h` Time Conversion Utilities (`RF-04`, `UI-07`)**
+- [x] **T2: Pure Bijective `12h <-> 24h` Time Conversion Utilities (`RF-04`, `UI-07`)**
   - **Associated Requirements:** `REQ-AU-16(2)`, Section 4.4
   - **Files Touched:**
     - `tests/unit/shared/utils/time-format.test.ts` (created — round-trip conversion, `00:mm <-> 12:mm a. m.`, `12:mm <-> 12:mm p. m.`, unset/partial selection tests)
