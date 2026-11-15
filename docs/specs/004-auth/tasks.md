@@ -113,7 +113,7 @@
   - **Done when:** All router guard and end-to-end integration flow tests pass in Vitest.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T10: Playwright End-to-End Tests (`AC-AU-01`..`AC-AU-12`)**
+- [x] **T10: Playwright End-to-End Tests (`AC-AU-01`..`AC-AU-12`)**
   - **Associated Requirements:** `AC-AU-01`..`AC-AU-12`, `UI-01`, `RNF-12`, `RNF-15`
   - **Files Touched:**
     - `tests/e2e/helpers/auth-e2e.ts` (created — UI registration + `"He guardado mis códigos, continuar"` helper for E2E suites)

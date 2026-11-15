@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
@@ -58,16 +58,18 @@ export function ProfilePage({
     },
   });
 
+  const { reset: resetProfileForm } = profileForm;
+
   useEffect(() => {
     if (currentUser) {
-      profileForm.reset({
+      resetProfileForm({
         displayName: currentUser.displayName,
         username: currentUser.username,
         email: currentUser.email,
         timeFormat: currentUser.timeFormat,
       });
     }
-  }, [currentUser, profileForm]);
+  }, [currentUser, resetProfileForm]);
 
   const passwordForm = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordFormSchema),
@@ -220,13 +222,23 @@ export function ProfilePage({
                 <Form.Label htmlFor="profile-timeformat-select">
                   {es.auth.timeFormatLabel}
                 </Form.Label>
-                <Form.Select
-                  id="profile-timeformat-select"
-                  {...profileForm.register('timeFormat')}
-                >
-                  <option value="24h">{es.auth.timeFormat24h}</option>
-                  <option value="12h">{es.auth.timeFormat12h}</option>
-                </Form.Select>
+                <Controller
+                  control={profileForm.control}
+                  name="timeFormat"
+                  render={({ field }) => (
+                    <Form.Select
+                      id="profile-timeformat-select"
+                      name={field.name}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    >
+                      <option value="24h">{es.auth.timeFormat24h}</option>
+                      <option value="12h">{es.auth.timeFormat12h}</option>
+                    </Form.Select>
+                  )}
+                />
               </Form.Group>
 
               <Form.Group className="mb-3">

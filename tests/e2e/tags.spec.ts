@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { clearAppStorage, registerUserAndContinue } from './helpers/auth-e2e';
 
 test.describe('Tags Feature End-to-End Workflow (003-tags)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await clearAppStorage(page);
+    await registerUserAndContinue(page);
   });
 
   test('should run full RF-22 tag lifecycle across groups at desktop and mobile widths with zero console errors', async ({

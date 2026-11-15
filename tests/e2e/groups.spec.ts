@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { clearAppStorage, registerUserAndContinue } from './helpers/auth-e2e';
 
 test.describe('Groups Feature End-to-End Workflow (002-groups)', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage before each test
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await clearAppStorage(page);
+    await registerUserAndContinue(page);
   });
 
   test('should run full groups lifecycle and verify multi-criteria filtering, search, and cascade deletion', async ({

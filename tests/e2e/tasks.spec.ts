@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { clearAppStorage, registerUserAndContinue } from './helpers/auth-e2e';
 
 test.describe('Tasks Feature End-to-End Workflow (001-tasks)', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage before each test
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
+    await clearAppStorage(page);
+    await registerUserAndContinue(page);
   });
 
   test('should load app, initialize default Personal group, and run full task lifecycle with zero console errors', async ({
@@ -21,7 +20,9 @@ test.describe('Tasks Feature End-to-End Workflow (001-tasks)', () => {
     // 1. Initial Load & Seed Group Provisioning
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Task by Task' })).toBeVisible();
-    await expect(page.getByLabel('Cambiar grupo activo')).toHaveValue('group-personal');
+    await expect(page.getByLabel('Cambiar grupo activo').locator('option:checked')).toHaveText(
+      'Personal',
+    );
     await expect(page.locator('header span.fw-semibold', { hasText: 'Personal' })).toBeVisible();
     await expect(page.getByText('No hay tareas pendientes en este grupo')).toBeVisible();
 
