@@ -5,7 +5,7 @@ Cross-session project memory. Max ~50 lines: summarize or prune outdated info th
 - `000-foundation`, `001-tasks` (Golden Reference), `002-groups`, `003-tags`, and `004-auth` fully implemented & verified. Spec statuses: `implemented`.
 - Installed: React 19.2, Vite 8, TS 6, ESLint 10, React Compiler, TanStack Router, Zustand, RHF, Zod, Bootstrap/react-bootstrap, Vitest/RTL, Playwright.
 - Scripts active: `dev`, `build`, `lint`, `preview`, `typecheck`, `test`, `test:watch`, `e2e`.
-- Verification stats: 371 Vitest unit/integration tests (37 files) + 8 Playwright E2E tests passing; 0 TS/ESLint errors/warnings; production build clean.
+- Verification stats: 373 Vitest unit/integration tests (37 files) + 8 Playwright E2E tests passing; 0 TS/ESLint errors/warnings; production build clean.
 - Auth feature delivered (`004-auth`): WebCrypto PBKDF2-SHA-256 hashing (`100k` iterations + 16-byte salt), 8 single-use one-time recovery codes, `tbt:v1:login_lockouts` 5-attempt/5-min cooldown, 7-day sessions with mid-session expiry/orphan checks & `subscribeAuthSessionEnd` teardown hook, per-user Personal provisioning & workspace isolation, `12h`/`24h` time capture (`to12HourParts`/`from12HourParts`) & display propagation, TanStack Router `beforeLoad` guards (`/`, `/profile`, `/login`, `/register`, `/recover`, `$` catch-all), and cascade account deletion.
 
 ## Learnings & Pitfalls to Avoid

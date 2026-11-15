@@ -249,4 +249,36 @@ describe('Auth Routes & Navigation Guards (integration/features/auth/auth-routes
     expect(await screen.findByText(es.auth.accountDeleted)).toBeInTheDocument();
     expect(screen.queryByText(es.auth.sessionExpired)).not.toBeInTheDocument();
   });
+
+  it('clears regenerated profile recovery codes when navigating away from /profile via router', async () => {
+    const user = userEvent.setup();
+    await useAuthStore.getState().register({
+      email: 'ana@example.com',
+      username: 'Ana123',
+      displayName: 'Ana García',
+      password: 'Password1',
+    });
+    useAuthStore.getState().acknowledgeRegistrationCodes();
+
+    const { router } = renderAt('/profile');
+    expect(await screen.findByRole('heading', { name: es.auth.profileTitle })).toBeInTheDocument();
+
+    const regenInput = screen.getByLabelText(es.auth.currentPasswordLabel, {
+      selector: '#profile-regen-password-input',
+    });
+    await user.type(regenInput, 'Password1');
+    await user.click(screen.getByRole('button', { name: es.auth.regenerateButton }));
+    expect(await screen.findByText(es.auth.regeneratedCodesTitle)).toBeInTheDocument();
+    expect(useAuthStore.getState().oneTimeRecoveryCodes).toHaveLength(8);
+
+    // Navigate away to / via router navigation (e.g. browser back/link)
+    await router.navigate({ to: '/' });
+    expect(await screen.findByText(`${es.auth.greetingPrefix} Ana García`)).toBeInTheDocument();
+    expect(useAuthStore.getState().oneTimeRecoveryCodes).toBeNull();
+
+    // Revisiting /profile no longer displays plaintext recovery codes
+    await router.navigate({ to: '/profile' });
+    expect(await screen.findByRole('heading', { name: es.auth.profileTitle })).toBeInTheDocument();
+    expect(screen.queryByText(es.auth.regeneratedCodesTitle)).not.toBeInTheDocument();
+  });
 });

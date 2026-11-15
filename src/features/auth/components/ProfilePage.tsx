@@ -86,6 +86,12 @@ export function ProfilePage({
     },
   });
 
+  useEffect(() => {
+    return () => {
+      dismissOneTimeRecoveryCodes();
+    };
+  }, [dismissOneTimeRecoveryCodes]);
+
   const handleProfileSubmit = profileForm.handleSubmit(async (values) => {
     clearAuthError();
     setProfileSuccess(false);

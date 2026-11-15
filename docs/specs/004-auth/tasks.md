@@ -1,7 +1,7 @@
 # Task Checklist: `004-auth` (User Accounts, Authentication, Profile & Recovery)
 
 - **Feature Name:** `004-auth`
-- **Spec Reference:** [docs/specs/004-auth/spec.md](./spec.md) (`Status: approved`)
+- **Spec Reference:** [docs/specs/004-auth/spec.md](./spec.md) (`Status: implemented`)
 - **Plan Reference:** [docs/specs/004-auth/plan.md](./plan.md)
 
 ---
@@ -84,7 +84,6 @@
     - `tests/integration/features/groups/{groups-grid-view.test.tsx,group-lifecycle.test.tsx}` (modified — authenticate test user in `beforeEach`; verify greeting/`"Mi perfil"`/`"Cerrar sesión"` bar & `timeFormat`/`timeZone` propagation to `GroupCard` & `TaskFormModal`)
     - `tests/integration/features/tags/tag-removal-flows.test.tsx` (modified — authenticate test user in `beforeEach`)
     - `src/features/tasks/components/TaskFormModal.tsx` (modified — explicit `12h` selectors, `"Limpiar hora"`, partial-time error handling, `dueDate` clear sync)
-    - `src/features/tasks/hooks/use-task-form.ts` (modified — clean reset sync for edit/create forms)
     - `src/features/tasks/components/TasksView.tsx` (modified — pass active user `timeFormat`/`timeZone`)
     - `src/features/groups/components/GroupsGridView.tsx` (modified — account navigation header + `timeFormat`/`timeZone` propagation)
   - **TDD Test First:** Add integration test cases for `12h` mode (`12:00 a. m. <-> 00:00`, `12:30 p. m. <-> 12:30`, partial selection rejection, `Limpiar hora`) and authenticated workspace header before editing UI components.

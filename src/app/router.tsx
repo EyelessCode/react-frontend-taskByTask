@@ -22,7 +22,24 @@ function exitPendingRecoveryCodesIfAny(): void {
   }
 }
 
-async function requireAuthenticatedGuard(): Promise<void> {
+function clearAllOneTimeRecoveryCodes(): void {
+  const state = useAuthStore.getState();
+  if (state.postRegisterCodesPending) {
+    state.acknowledgeRegistrationCodes();
+  } else if (state.oneTimeRecoveryCodes !== null) {
+    state.dismissOneTimeRecoveryCodes();
+  }
+}
+
+async function requireWorkspaceAuthenticatedGuard(): Promise<void> {
+  const { authenticated } = await useAuthStore.getState().validateSession();
+  if (!authenticated) {
+    throw redirect({ to: '/login', replace: true });
+  }
+  clearAllOneTimeRecoveryCodes();
+}
+
+async function requireProfileAuthenticatedGuard(): Promise<void> {
   const { authenticated } = await useAuthStore.getState().validateSession();
   if (!authenticated) {
     throw redirect({ to: '/login', replace: true });
@@ -33,7 +50,7 @@ async function requireAuthenticatedGuard(): Promise<void> {
 async function requireUnauthenticatedGuard(): Promise<void> {
   const { authenticated } = await useAuthStore.getState().validateSession();
   if (authenticated) {
-    exitPendingRecoveryCodesIfAny();
+    clearAllOneTimeRecoveryCodes();
     throw redirect({ to: '/', replace: true });
   }
 }
@@ -47,6 +64,7 @@ async function registerRouteGuard(): Promise<void> {
       oneTimeRecoveryCodes !== null &&
       oneTimeRecoveryCodes.length > 0;
     if (!hasPendingCodes) {
+      clearAllOneTimeRecoveryCodes();
       throw redirect({ to: '/', replace: true });
     }
   }
@@ -55,7 +73,7 @@ async function registerRouteGuard(): Promise<void> {
 async function catchAllGuard(): Promise<void> {
   const { authenticated } = await useAuthStore.getState().validateSession();
   if (authenticated) {
-    exitPendingRecoveryCodesIfAny();
+    clearAllOneTimeRecoveryCodes();
     throw redirect({ to: '/', replace: true });
   }
   throw redirect({ to: '/login', replace: true });
@@ -68,14 +86,14 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: requireAuthenticatedGuard,
+  beforeLoad: requireWorkspaceAuthenticatedGuard,
   component: WorkspaceRouteComponent,
 });
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/profile',
-  beforeLoad: requireAuthenticatedGuard,
+  beforeLoad: requireProfileAuthenticatedGuard,
   component: ProfileRouteComponent,
 });
 

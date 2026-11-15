@@ -121,6 +121,22 @@ async function requireActiveUserId(): Promise<string> {
   return activeUserId;
 }
 
+async function getAccessibleGroupIds(activeUserId: string): Promise<Set<string>> {
+  const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
+  return new Set(accessibleGroups.map((g) => g.id));
+}
+
+function assertGroupAccessible(accessibleGroupIds: Set<string>, groupId: string): void {
+  if (!accessibleGroupIds.has(groupId)) {
+    throw new NotFoundError('Grupo', groupId);
+  }
+}
+
+async function getAccessibleAllTags(accessibleGroupIds: Set<string>): Promise<Tag[]> {
+  const allTags = await deps.tagRepository.getAll();
+  return allTags.filter((t) => accessibleGroupIds.has(t.groupId));
+}
+
 export const useTasksStore = create<TasksStore>()((set, get) => ({
   ...initialState,
 
@@ -171,7 +187,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   setActiveGroup: async (groupId: string) => {
-    set({ isLoading: true, error: null, activeGroupId: groupId });
+    set({ isLoading: true, error: null });
     try {
       const activeUserId = await deps.getActiveUserId();
       if (!activeUserId) {
@@ -179,18 +195,19 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         return;
       }
 
-      const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
-      const accessibleGroupIds = new Set(accessibleGroups.map((g) => g.id));
+      const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+      assertGroupAccessible(accessibleGroupIds, groupId);
 
       const [groupTasks, groupTags, allTags] = await Promise.all([
         deps.taskRepository.getByGroupId(groupId),
         deps.tagRepository.getByGroupId(groupId),
-        deps.tagRepository.getAll(),
+        getAccessibleAllTags(accessibleGroupIds),
       ]);
       set({
+        activeGroupId: groupId,
         tasks: groupTasks,
         tags: groupTags,
-        allTags: allTags.filter((t) => accessibleGroupIds.has(t.groupId)),
+        allTags,
         isLoading: false,
       });
     } catch (err) {
@@ -225,8 +242,10 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   createTask: async (payload: TaskFormInput) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const targetGroupId = payload.groupId || get().activeGroupId;
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, targetGroupId);
     const tagIds =
       payload.tagNames && payload.tagNames.length > 0
         ? await ensureDeduplicatedTagIds(targetGroupId, payload.tagNames)
@@ -254,7 +273,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(newTask);
-    const allTags = await deps.tagRepository.getAll();
+    const allTags = await getAccessibleAllTags(accessibleGroupIds);
 
     if (targetGroupId === get().activeGroupId) {
       const updatedTags = allTags.filter((t) => t.groupId === targetGroupId);
@@ -271,11 +290,13 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   updateTask: async (taskId: string, payload: Partial<TaskFormInput>) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const existing = await deps.taskRepository.getById(taskId);
     if (!existing) {
       throw new NotFoundError('Tarea', taskId);
     }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, existing.groupId);
 
     const tagIds =
       payload.tagNames !== undefined
@@ -297,7 +318,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(updatedTask);
-    const allTags = await deps.tagRepository.getAll();
+    const allTags = await getAccessibleAllTags(accessibleGroupIds);
 
     if (existing.groupId === get().activeGroupId) {
       const updatedTags = allTags.filter((t) => t.groupId === existing.groupId);
@@ -314,7 +335,14 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   deleteTask: async (taskId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
+    const existing = await deps.taskRepository.getById(taskId);
+    if (!existing) {
+      throw new NotFoundError('Tarea', taskId);
+    }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, existing.groupId);
+
     await deps.taskRepository.delete(taskId);
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== taskId),
@@ -322,11 +350,13 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   toggleTaskComplete: async (taskId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
     }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, task.groupId);
 
     const updated: Task = {
       ...task,
@@ -342,11 +372,14 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   moveTask: async (taskId: string, targetGroupId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
     }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, task.groupId);
+    assertGroupAccessible(accessibleGroupIds, targetGroupId);
 
     const newTagIds: string[] = [];
     if (task.tagIds && task.tagIds.length > 0) {
@@ -368,7 +401,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(movedTask);
-    const allTags = await deps.tagRepository.getAll();
+    const allTags = await getAccessibleAllTags(accessibleGroupIds);
 
     if (get().activeGroupId !== targetGroupId) {
       set((state) => ({
@@ -386,11 +419,14 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   copyTask: async (taskId: string, targetGroupId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
     }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, task.groupId);
+    assertGroupAccessible(accessibleGroupIds, targetGroupId);
 
     const newTagIds: string[] = [];
     if (task.tagIds && task.tagIds.length > 0) {
@@ -419,7 +455,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(copiedTask);
-    const allTags = await deps.tagRepository.getAll();
+    const allTags = await getAccessibleAllTags(accessibleGroupIds);
 
     if (get().activeGroupId === targetGroupId) {
       const updatedTags = allTags.filter((t) => t.groupId === targetGroupId);
@@ -436,11 +472,13 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   removeTagFromTask: async (taskId: string, tagId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
     }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, task.groupId);
 
     const updatedTask: Task = {
       ...task,
@@ -455,11 +493,18 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   deleteTagFromGroup: async (tagId: string) => {
-    await requireActiveUserId();
+    const activeUserId = await requireActiveUserId();
+    const tag = await deps.tagRepository.getById(tagId);
+    if (!tag) {
+      throw new NotFoundError('Etiqueta', tagId);
+    }
+    const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
+    assertGroupAccessible(accessibleGroupIds, tag.groupId);
+
     await deps.tagRepository.deleteFromGroup(tagId);
 
-    const allTasks = await deps.taskRepository.getAll();
-    for (const task of allTasks) {
+    const groupTasks = await deps.taskRepository.getByGroupId(tag.groupId);
+    for (const task of groupTasks) {
       if (task.tagIds && task.tagIds.includes(tagId)) {
         const updated: Task = {
           ...task,

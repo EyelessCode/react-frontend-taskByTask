@@ -283,7 +283,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
-    const plainCodes = generateRecoveryCodes(LIMITS.RECOVERY_CODES_COUNT);
+    const plainCodes = generateRecoveryCodes(LIMITS.RECOVERY_CODES_COUNT, deps.cryptoProvider);
     const codeRecords = buildRecoveryCodeRecords(newUser.id, plainCodes, deps.createId);
     await deps.recoveryCodeRepository.replaceForUser(newUser.id, codeRecords);
     await deps.groupRepository.ensurePersonalGroupForUser(newUser.id, nowIso);
@@ -574,7 +574,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
-    const plainCodes = generateRecoveryCodes(LIMITS.RECOVERY_CODES_COUNT);
+    const plainCodes = generateRecoveryCodes(LIMITS.RECOVERY_CODES_COUNT, deps.cryptoProvider);
     const records = buildRecoveryCodeRecords(user.id, plainCodes, deps.createId);
     await deps.recoveryCodeRepository.replaceForUser(user.id, records);
 

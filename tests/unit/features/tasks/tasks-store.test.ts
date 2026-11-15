@@ -399,4 +399,79 @@ describe('useTasksStore (unit/features/tasks/tasks-store)', () => {
     });
     expect(updated.tagIds).toHaveLength(2);
   });
+
+  it('filters allTags by accessible groups on task mutations and rejects cross-user group/task/tag access', async () => {
+    const foreignGroup = {
+      id: 'grp-foreign',
+      name: 'Grupo Ajeno',
+      type: 'individual' as const,
+      isPersonal: false,
+      creatorId: 'other-user',
+      members: [{ userId: 'other-user', role: 'creator' as const, joinedAt: '2026-10-01T10:00:00.000Z' }],
+      createdAt: '2026-10-01T10:00:00.000Z',
+    };
+    await groupRepository.save(foreignGroup);
+    await groupRepository.save(workGroup);
+    const foreignTag = await tagRepository.ensureTag('grp-foreign', 'SecretoAjeno');
+    const foreignTask = {
+      id: 'task-foreign',
+      title: 'Tarea Ajena',
+      description: null,
+      groupId: 'grp-foreign',
+      tagIds: [foreignTag.id],
+      completed: false,
+      createdAt: '2026-10-01T10:00:00.000Z',
+      completedAt: null,
+      dueDate: null,
+      dueTime: null,
+      assigneeId: null,
+      subtasks: [],
+      reminders: [],
+    };
+    await taskRepository.save(foreignTask);
+
+    await useTasksStore.getState().init();
+    expect(useTasksStore.getState().allTags.some((t) => t.id === foreignTag.id)).toBe(false);
+
+    // Task mutations must keep allTags scoped to active user's accessible groups
+    const ownTask = await useTasksStore.getState().createTask({
+      title: 'Tarea Propia',
+      tagNames: ['Propia'],
+      groupId: SEED_PERSONAL_GROUP.id,
+    });
+    expect(useTasksStore.getState().allTags.some((t) => t.id === foreignTag.id)).toBe(false);
+
+    await useTasksStore.getState().updateTask(ownTask.id, { title: 'Tarea Propia Editada' });
+    expect(useTasksStore.getState().allTags.some((t) => t.id === foreignTag.id)).toBe(false);
+
+    await useTasksStore.getState().moveTask(ownTask.id, 'grp-work');
+    expect(useTasksStore.getState().allTags.some((t) => t.id === foreignTag.id)).toBe(false);
+
+    await useTasksStore.getState().copyTask(ownTask.id, SEED_PERSONAL_GROUP.id);
+    expect(useTasksStore.getState().allTags.some((t) => t.id === foreignTag.id)).toBe(false);
+
+    // Cross-user setActiveGroup sets error and preserves activeGroupId
+    const prevActive = useTasksStore.getState().activeGroupId;
+    await useTasksStore.getState().setActiveGroup('grp-foreign');
+    expect(useTasksStore.getState().activeGroupId).toBe(prevActive);
+    expect(useTasksStore.getState().error).toBeTruthy();
+
+    // Cross-user task & tag mutations reject
+    await expect(
+      useTasksStore.getState().createTask({ title: 'No permitido', groupId: 'grp-foreign' }),
+    ).rejects.toThrow();
+    await expect(
+      useTasksStore.getState().updateTask('task-foreign', { title: 'Hack' }),
+    ).rejects.toThrow();
+    await expect(useTasksStore.getState().toggleTaskComplete('task-foreign')).rejects.toThrow();
+    await expect(useTasksStore.getState().deleteTask('task-foreign')).rejects.toThrow();
+    await expect(useTasksStore.getState().moveTask('task-foreign', 'grp-work')).rejects.toThrow();
+    await expect(useTasksStore.getState().moveTask(ownTask.id, 'grp-foreign')).rejects.toThrow();
+    await expect(useTasksStore.getState().copyTask('task-foreign', 'grp-work')).rejects.toThrow();
+    await expect(useTasksStore.getState().copyTask(ownTask.id, 'grp-foreign')).rejects.toThrow();
+    await expect(
+      useTasksStore.getState().removeTagFromTask('task-foreign', foreignTag.id),
+    ).rejects.toThrow();
+    await expect(useTasksStore.getState().deleteTagFromGroup(foreignTag.id)).rejects.toThrow();
+  });
 });
