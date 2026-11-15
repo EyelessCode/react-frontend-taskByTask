@@ -91,7 +91,7 @@
   - **Done when:** All task, group, and tag integration tests pass cleanly with both `'24h'` and `'12h'` modes.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Authentication, Recovery & Profile UI Views (`RF-01`–`RF-05`, `UI-01`, `UI-06`, `RNF-12`, `RNF-14`)**
+- [x] **T8: Authentication, Recovery & Profile UI Views (`RF-01`–`RF-05`, `UI-01`, `UI-06`, `RNF-12`, `RNF-14`)**
   - **Associated Requirements:** `REQ-AU-01`–`REQ-AU-19`, `REQ-AU-22`, `REQ-AU-23`
   - **Files Touched:**
     - `src/features/auth/components/{AuthLayout.tsx,LoginPage.tsx,OneTimeRecoveryCodesCard.tsx,RegisterPage.tsx,RecoverPasswordPage.tsx,DeleteAccountConfirmModal.tsx,ProfilePage.tsx,index.ts}` (created)
