@@ -24,7 +24,7 @@
   - **Done when:** `src/shared/i18n/es.ts` compiles cleanly with strict TypeScript types and all localization unit tests pass.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Pure Tag Domain Utilities (`src/features/tags/utils/tag-operations.ts`)**
+- [x] **T2: Pure Tag Domain Utilities (`src/features/tags/utils/tag-operations.ts`)**
   - **Associated Requirements:** `REQ-TG-01`, `REQ-TG-02`, `REQ-TG-03`, `REQ-TG-04`, `REQ-TG-05`, `REQ-TG-06`, `REQ-TG-07`, `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-12`, `REQ-TG-13`, `REQ-TG-15`, `REQ-TG-16`, `REQ-TG-21`, `REQ-TG-23`, `AC-TG-01`..`AC-TG-06`, `AC-TG-10`
   - **Files Touched:**
     - `tests/unit/features/tags/tag-operations.test.ts` (created)
