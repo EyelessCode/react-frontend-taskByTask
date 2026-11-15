@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Spanish Localization Extensions (`src/shared/i18n/es.ts`)**
+- [x] **T1: Spanish Localization Extensions (`src/shared/i18n/es.ts`)**
   - **Associated Requirements:** `REQ-TG-03`, `REQ-TG-16`, `REQ-TG-17`, `REQ-TG-21`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `RNF-14`, `AC-TG-07`, `AC-TG-08`, `AC-TG-12`
   - **Files Touched:**
     - `tests/unit/shared/i18n/es.test.ts` (modified - add unit tests verifying new tag accessibility, inline editing, and `UI-06` consequence strings)

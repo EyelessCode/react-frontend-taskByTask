@@ -36,6 +36,23 @@ export interface LocalizationDictionary {
   };
   tasks: TasksLocalization;
   groups: GroupsLocalization;
+  tags: TagsLocalization;
+}
+
+export interface TagsLocalization {
+  tagsLabel: string;
+  tagsPlaceholder: string;
+  tagOverflow: (count: number) => string;
+  tagOverflowAria: (count: number) => string;
+  editTagAria: (tagName: string) => string;
+  editingTagInputAria: (tagName: string) => string;
+  editTagHint: string;
+  removeTagAria: (tagName: string) => string;
+  removeTagTitle: string;
+  removeTagPrompt: (tagName: string) => string;
+  removeTagDescription: string;
+  removeOnlyFromTask: string;
+  removeFromGroup: string;
 }
 
 export interface GroupsLocalization {
@@ -100,8 +117,14 @@ export interface TasksLocalization {
   confirmMove: string;
   confirmCopy: string;
   tagOverflow: (count: number) => string;
+  tagOverflowAria: (count: number) => string;
+  editTagAria: (tagName: string) => string;
+  editingTagInputAria: (tagName: string) => string;
+  editTagHint: string;
+  removeTagAria: (tagName: string) => string;
   removeTagTitle: string;
   removeTagPrompt: (tagName: string) => string;
+  removeTagDescription: string;
   removeOnlyFromTask: string;
   removeFromGroup: string;
   badgeOverdue: string;
@@ -109,6 +132,24 @@ export interface TasksLocalization {
   emptyCompleted: string;
   emptyAll: string;
 }
+
+const tagsLocalization = {
+  tagsLabel: 'Etiquetas',
+  tagsPlaceholder: 'Escribe una etiqueta y presiona coma o punto y coma',
+  tagOverflow: (count: number) => `+${count} más`,
+  tagOverflowAria: (count: number) =>
+    `${count} etiquetas adicionales ocultas. Edita la tarea para ver todas.`,
+  editTagAria: (tagName: string) => `Editar etiqueta ${tagName}`,
+  editingTagInputAria: (tagName: string) => `Editando etiqueta ${tagName}`,
+  editTagHint: 'Haz clic o presiona Enter en una etiqueta para editarla en esta tarea',
+  removeTagAria: (tagName: string) => `Quitar etiqueta ${tagName}`,
+  removeTagTitle: 'Quitar etiqueta',
+  removeTagPrompt: (tagName: string) => `¿Cómo deseas quitar la etiqueta "${tagName}"?`,
+  removeTagDescription:
+    'Si eliges "Solo de la tarea", la etiqueta se conservará en el grupo. Si eliges "Del grupo", se eliminará permanentemente del grupo y de todas sus tareas.',
+  removeOnlyFromTask: 'Solo de la tarea',
+  removeFromGroup: 'Del grupo',
+} as const satisfies TagsLocalization;
 
 export const es = {
   app: {
@@ -155,8 +196,8 @@ export const es = {
     descPlaceholder: 'Añade una descripción (opcional)',
     dueDateLabel: 'Fecha de caducidad',
     dueTimeLabel: 'Hora de caducidad',
-    tagsLabel: 'Etiquetas',
-    tagsPlaceholder: 'Escribe una etiqueta y presiona coma o punto y coma',
+    tagsLabel: tagsLocalization.tagsLabel,
+    tagsPlaceholder: tagsLocalization.tagsPlaceholder,
     groupLabel: 'Grupo',
     filterPending: 'Pendientes',
     filterCompleted: 'Completadas',
@@ -178,11 +219,17 @@ export const es = {
       'No tienes otros grupos individuales disponibles para mover o copiar esta tarea.',
     confirmMove: 'Mover',
     confirmCopy: 'Copiar',
-    tagOverflow: (count: number) => `+${count} más`,
-    removeTagTitle: 'Quitar etiqueta',
-    removeTagPrompt: (tagName: string) => `¿Cómo deseas quitar la etiqueta "${tagName}"?`,
-    removeOnlyFromTask: 'Solo de la tarea',
-    removeFromGroup: 'Del grupo',
+    tagOverflow: tagsLocalization.tagOverflow,
+    tagOverflowAria: tagsLocalization.tagOverflowAria,
+    editTagAria: tagsLocalization.editTagAria,
+    editingTagInputAria: tagsLocalization.editingTagInputAria,
+    editTagHint: tagsLocalization.editTagHint,
+    removeTagAria: tagsLocalization.removeTagAria,
+    removeTagTitle: tagsLocalization.removeTagTitle,
+    removeTagPrompt: tagsLocalization.removeTagPrompt,
+    removeTagDescription: tagsLocalization.removeTagDescription,
+    removeOnlyFromTask: tagsLocalization.removeOnlyFromTask,
+    removeFromGroup: tagsLocalization.removeFromGroup,
     badgeOverdue: 'Vencida',
     emptyPending: 'No hay tareas pendientes en este grupo',
     emptyCompleted: 'No hay tareas completadas en este grupo',
@@ -214,4 +261,5 @@ export const es = {
     noGroupsFound: 'No se encontraron grupos.',
     taskCount: (count: number) => `${count} ${count === 1 ? 'tarea' : 'tareas'}`,
   },
+  tags: tagsLocalization,
 } as const satisfies LocalizationDictionary;

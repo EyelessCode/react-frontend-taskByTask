@@ -12,6 +12,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
     expect(dict.dateTime).toBeDefined();
     expect(dict.tasks).toBeDefined();
     expect(dict.groups).toBeDefined();
+    expect(dict.tags).toBeDefined();
   });
 
   describe('app namespace', () => {
@@ -151,6 +152,47 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.tasks.removeTagPrompt('trabajo')).toBe(
         '¿Cómo deseas quitar la etiqueta "trabajo"?',
       );
+    });
+
+    it('should provide tag accessibility, inline editing, and UI-06 consequence strings', () => {
+      expect(es.tasks.tagOverflowAria(2)).toBe(
+        '2 etiquetas adicionales ocultas. Edita la tarea para ver todas.',
+      );
+      expect(es.tasks.editTagAria('trabajo')).toBe('Editar etiqueta trabajo');
+      expect(es.tasks.editingTagInputAria('trabajo')).toBe('Editando etiqueta trabajo');
+      expect(es.tasks.editTagHint).toBe(
+        'Haz clic o presiona Enter en una etiqueta para editarla en esta tarea',
+      );
+      expect(es.tasks.removeTagAria('trabajo')).toBe('Quitar etiqueta trabajo');
+      expect(es.tasks.removeTagDescription).toBe(
+        'Si eliges "Solo de la tarea", la etiqueta se conservará en el grupo. Si eliges "Del grupo", se eliminará permanentemente del grupo y de todas sus tareas.',
+      );
+    });
+  });
+
+  describe('tags namespace', () => {
+    it('should expose the complete tag localization contract', () => {
+      expect(es.tags.tagsLabel).toBe('Etiquetas');
+      expect(es.tags.tagsPlaceholder).toBe('Escribe una etiqueta y presiona coma o punto y coma');
+      expect(es.tags.tagOverflow(3)).toBe('+3 más');
+      expect(es.tags.tagOverflowAria(3)).toBe(
+        '3 etiquetas adicionales ocultas. Edita la tarea para ver todas.',
+      );
+      expect(es.tags.editTagAria('urgente')).toBe('Editar etiqueta urgente');
+      expect(es.tags.editingTagInputAria('urgente')).toBe('Editando etiqueta urgente');
+      expect(es.tags.editTagHint).toBe(
+        'Haz clic o presiona Enter en una etiqueta para editarla en esta tarea',
+      );
+      expect(es.tags.removeTagAria('urgente')).toBe('Quitar etiqueta urgente');
+      expect(es.tags.removeTagTitle).toBe('Quitar etiqueta');
+      expect(es.tags.removeTagPrompt('urgente')).toBe(
+        '¿Cómo deseas quitar la etiqueta "urgente"?',
+      );
+      expect(es.tags.removeTagDescription).toBe(
+        'Si eliges "Solo de la tarea", la etiqueta se conservará en el grupo. Si eliges "Del grupo", se eliminará permanentemente del grupo y de todas sus tareas.',
+      );
+      expect(es.tags.removeOnlyFromTask).toBe('Solo de la tarea');
+      expect(es.tags.removeFromGroup).toBe('Del grupo');
     });
   });
 
