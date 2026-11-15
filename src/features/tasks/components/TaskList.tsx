@@ -14,6 +14,7 @@ export interface TaskListProps {
   onDelete?: (task: Task) => void;
   onRemoveTag?: (task: Task, tag: Tag) => void;
   timeFormat?: '24h' | '12h';
+  timeZone?: string;
 }
 
 export function TaskList({
@@ -27,6 +28,7 @@ export function TaskList({
   onDelete,
   onRemoveTag,
   timeFormat = '24h',
+  timeZone,
 }: TaskListProps) {
   if (tasks.length === 0) {
     let emptyMessage: string = es.tasks.emptyAll;
@@ -57,6 +59,7 @@ export function TaskList({
           onDelete={onDelete}
           onRemoveTag={onRemoveTag}
           timeFormat={timeFormat}
+          timeZone={timeZone}
         />
       ))}
     </div>

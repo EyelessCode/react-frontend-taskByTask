@@ -77,7 +77,7 @@
   - **Done when:** `useGroupsStore` and `useTasksStore` enforce strict per-user isolation and pass all store & hook unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: `12h` / `24h` Time Capture & Workspace Account Header Integration (`RF-04`, `UI-07`, `REQ-TK-04`)**
+- [x] **T7: `12h` / `24h` Time Capture & Workspace Account Header Integration (`RF-04`, `UI-07`, `REQ-TK-04`)**
   - **Associated Requirements:** `REQ-AU-16`, `REQ-AU-08`, `REQ-AU-22`, `REQ-AU-23`
   - **Files Touched:**
     - `tests/integration/features/tasks/{task-form-modal.test.tsx,tasks-view.test.tsx,task-move-copy-modal.test.tsx}` (modified — authenticate test user in `beforeEach`; add `12h` due-time capture, midnight/noon conversion, partial-time `incompleteTimeError`, `dueDate` empty disabled/auto-clear, `"Limpiar hora"` integration tests)

@@ -258,4 +258,84 @@ describe('TaskFormModal, TaskTagInput, TaskTagRemovalModal (integration/features
       expect(updated?.createdAt).toBe(existingTask.createdAt); // Preserves immutable createdAt
     });
   });
+
+  describe('TaskFormModal 12h Time Capture (REQ-AU-16, REQ-TK-04)', () => {
+    it('captures 12h time bijectively (12:00 am -> 00:00), rejects partial selection, and supports clear/dueDate sync', async () => {
+      const user = userEvent.setup();
+      const onSuccess = vi.fn();
+
+      render(
+        <TaskFormModal
+          show={true}
+          timeFormat="12h"
+          onClose={vi.fn()}
+          onSuccess={onSuccess}
+        />,
+      );
+
+      const hourSelect = screen.getByLabelText<HTMLSelectElement>(es.auth.timeHourAria);
+      const minuteSelect = screen.getByLabelText<HTMLSelectElement>(es.auth.timeMinuteAria);
+      const periodSelect = screen.getByLabelText<HTMLSelectElement>(es.auth.timePeriodAria);
+      const clearTimeBtn = screen.getByRole('button', { name: es.auth.clearTimeLabel });
+
+      // Disabled when dueDate is empty
+      expect(hourSelect).toBeDisabled();
+      expect(minuteSelect).toBeDisabled();
+      expect(periodSelect).toBeDisabled();
+      expect(clearTimeBtn).toBeDisabled();
+
+      await user.type(screen.getByLabelText(es.tasks.titleLabel), 'Tarea 12h medianoche');
+      await user.type(screen.getByLabelText(es.tasks.dueDateLabel), '2026-12-01');
+
+      expect(hourSelect).toBeEnabled();
+      expect(clearTimeBtn).toBeDisabled();
+
+      // Partial selection -> incompleteTimeError
+      await user.selectOptions(hourSelect, '12');
+      expect(clearTimeBtn).toBeEnabled();
+      await user.click(screen.getByRole('button', { name: es.common.save }));
+      expect(await screen.findByText(es.auth.incompleteTimeError)).toBeInTheDocument();
+      expect(onSuccess).not.toHaveBeenCalled();
+
+      // Clear button resets time parts
+      await user.click(clearTimeBtn);
+      expect(hourSelect.value).toBe('');
+      expect(clearTimeBtn).toBeDisabled();
+
+      // Complete 12:00 a. m. -> persists as 00:00
+      await user.selectOptions(hourSelect, '12');
+      await user.selectOptions(minuteSelect, '00');
+      await user.selectOptions(periodSelect, 'am');
+      await user.click(screen.getByRole('button', { name: es.common.save }));
+
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(useTasksStore.getState().tasks[0]?.dueTime).toBe('00:00');
+    });
+
+    it('pre-populates 12h controls from 24h dueTime in edit mode (13:45 -> 01:45 pm)', () => {
+      const existingTask: Task = {
+        id: 'task-edit-12h',
+        title: 'Editar 12h',
+        groupId: SEED_PERSONAL_GROUP.id,
+        completed: false,
+        createdAt: '2026-11-01T10:00:00.000Z',
+        dueDate: '2026-12-01',
+        dueTime: '13:45',
+        tagIds: [],
+      };
+
+      render(
+        <TaskFormModal
+          show={true}
+          task={existingTask}
+          timeFormat="12h"
+          onClose={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByLabelText<HTMLSelectElement>(es.auth.timeHourAria).value).toBe('01');
+      expect(screen.getByLabelText<HTMLSelectElement>(es.auth.timeMinuteAria).value).toBe('45');
+      expect(screen.getByLabelText<HTMLSelectElement>(es.auth.timePeriodAria).value).toBe('pm');
+    });
+  });
 });

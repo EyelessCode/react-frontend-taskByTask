@@ -5,6 +5,7 @@ import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import Alert from 'react-bootstrap/Alert';
 import { useTasks } from '../hooks/use-tasks';
+import { useAuth } from '../../auth/hooks';
 import { TaskFilterTabs } from './TaskFilterTabs';
 import { TaskList } from './TaskList';
 import { TaskFormModal } from './TaskFormModal';
@@ -13,7 +14,16 @@ import { TaskDeleteConfirmModal } from './TaskDeleteConfirmModal';
 import { TaskTagRemovalModal } from './TaskTagRemovalModal';
 import { es } from '../../../shared/i18n';
 
-export function TasksView() {
+export interface TasksViewProps {
+  onNavigateToProfile?: () => void;
+  onLoggedOut?: () => void;
+}
+
+export function TasksView({ onNavigateToProfile, onLoggedOut }: TasksViewProps = {}) {
+  const { currentUser, isAuthenticated, logout } = useAuth();
+  const timeFormat = currentUser?.timeFormat ?? '24h';
+  const timeZone = currentUser?.timeZone;
+
   const {
     tasks,
     rawTasks,
@@ -88,6 +98,38 @@ export function TasksView() {
           </div>
         </div>
 
+        {isAuthenticated && currentUser && (
+          <nav
+            aria-label="Cuenta"
+            className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-2 bg-light rounded border"
+          >
+            <span className="small fw-semibold">
+              {es.auth.greetingPrefix} {currentUser.displayName}
+            </span>
+            <div className="d-flex align-items-center gap-2">
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                type="button"
+                onClick={() => onNavigateToProfile?.()}
+              >
+                {es.auth.profileLink}
+              </Button>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  onLoggedOut?.();
+                }}
+              >
+                {es.auth.logoutButton}
+              </Button>
+            </div>
+          </nav>
+        )}
+
         {activeGroup && (
           <div className="small text-muted">
             <span>Grupo activo: </span>
@@ -125,6 +167,8 @@ export function TasksView() {
             tasks={tasks}
             tags={tags}
             filter={activeFilter}
+            timeFormat={timeFormat}
+            timeZone={timeZone}
             onToggleComplete={toggleTaskComplete}
             onEdit={(task) => openModal('edit', task.id)}
             onMove={(task) => openModal('move', task.id)}
@@ -142,6 +186,7 @@ export function TasksView() {
       <TaskFormModal
         show={modalState.type === 'create' || modalState.type === 'edit'}
         task={modalState.type === 'edit' ? activeModalTask : null}
+        timeFormat={timeFormat}
         onClose={closeModal}
       />
 

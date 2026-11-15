@@ -3,11 +3,13 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
 import Spinner from 'react-bootstrap/Spinner';
 import Alert from 'react-bootstrap/Alert';
 
 import { useGroups } from '../hooks/use-groups';
 import { useTasks } from '../../tasks/hooks/use-tasks';
+import { useAuth } from '../../auth/hooks';
 
 import { GroupCard } from './GroupCard';
 import { GroupsFilterToolbar } from './GroupsFilterToolbar';
@@ -21,7 +23,19 @@ import { TaskTagRemovalModal } from '../../tasks/components/TaskTagRemovalModal'
 
 import { es } from '../../../shared/i18n';
 
-export function GroupsGridView() {
+export interface GroupsGridViewProps {
+  onNavigateToProfile?: () => void;
+  onLoggedOut?: () => void;
+}
+
+export function GroupsGridView({
+  onNavigateToProfile,
+  onLoggedOut,
+}: GroupsGridViewProps = {}) {
+  const { currentUser, isAuthenticated, logout } = useAuth();
+  const timeFormat = currentUser?.timeFormat ?? '24h';
+  const timeZone = currentUser?.timeZone;
+
   const {
     groups,
     visibleGroups,
@@ -80,6 +94,38 @@ export function GroupsGridView() {
     <Container className="py-4" fluid="lg">
       {/* Header */}
       <header className="mb-4">
+        {isAuthenticated && currentUser && (
+          <nav
+            aria-label="Cuenta"
+            className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-3 bg-light rounded border"
+          >
+            <span className="small fw-semibold">
+              {es.auth.greetingPrefix} {currentUser.displayName}
+            </span>
+            <div className="d-flex align-items-center gap-2">
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                type="button"
+                onClick={() => onNavigateToProfile?.()}
+              >
+                {es.auth.profileLink}
+              </Button>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  onLoggedOut?.();
+                }}
+              >
+                {es.auth.logoutButton}
+              </Button>
+            </div>
+          </nav>
+        )}
+
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
           <div>
             <h1 className="h3 fw-bold mb-0 text-primary">{es.app.title}</h1>
@@ -164,6 +210,8 @@ export function GroupsGridView() {
                 group={group}
                 tasks={getGroupTasks(group.id)}
                 tags={tags}
+                timeFormat={timeFormat}
+                timeZone={timeZone}
                 onAddTask={(groupId) => {
                   setInlineGroupId(groupId);
                   tasksSetActiveGroup(groupId);
@@ -218,6 +266,7 @@ export function GroupsGridView() {
         show={
           taskModalState.type === 'create' || taskModalState.type === 'edit'
         }
+        timeFormat={timeFormat}
         task={activeTaskModalTask}
         defaultGroupId={inlineGroupId ?? activeGroupId}
         onClose={() => {

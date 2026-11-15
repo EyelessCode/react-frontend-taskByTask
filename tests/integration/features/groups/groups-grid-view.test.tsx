@@ -17,6 +17,7 @@ import {
   resetTasksStore,
 } from '@/features/tasks/store/tasks-store';
 import { GroupsGridView } from '@/features/groups/components/GroupsGridView';
+import { resetAuthStore, useAuthStore } from '@/features/auth/store';
 import { SEED_PERSONAL_GROUP, type Group, type Task } from '@/shared/schemas';
 import { es } from '@/shared/i18n';
 
@@ -237,5 +238,56 @@ describe('GroupsGridView Integration (integration/features/groups/groups-grid-vi
     await user.click(refreshBtn);
 
     expect(await screen.findByText('Tarea agregada externamente')).toBeInTheDocument();
+  });
+
+  it('renders authenticated account bar (greeting, Mi perfil, Cerrar sesión) and propagates 12h timeFormat', async () => {
+    const user = userEvent.setup();
+    const onNavigateToProfile = vi.fn();
+    const onLoggedOut = vi.fn();
+
+    resetAuthStore();
+    useAuthStore.setState({
+      isAuthenticated: true,
+      isInitialized: true,
+      currentUser: {
+        id: 'local-user',
+        email: 'ana@example.com',
+        username: 'Ana123',
+        displayName: 'Ana García',
+        passwordHash: 'hash',
+        timeZone: 'America/Bogota',
+        timeFormat: '12h',
+        createdAt: '2026-11-01T10:00:00.000Z',
+      },
+    });
+
+    await taskRepository.save({
+      id: 'task-12h-card',
+      title: 'Cita médica',
+      groupId: SEED_PERSONAL_GROUP.id,
+      completed: false,
+      dueDate: '2026-12-20',
+      dueTime: '14:30',
+      createdAt: '2026-11-04T12:00:00.000Z',
+      tagIds: [],
+    });
+
+    render(
+      <GroupsGridView
+        onNavigateToProfile={onNavigateToProfile}
+        onLoggedOut={onLoggedOut}
+      />,
+    );
+
+    expect(await screen.findByText(/Hola, Ana García/)).toBeInTheDocument();
+    expect(screen.getByText(/02:30 p\. m\./)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: es.auth.profileLink }));
+    expect(onNavigateToProfile).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: es.auth.logoutButton }));
+    expect(onLoggedOut).toHaveBeenCalledTimes(1);
+
+    resetAuthStore();
   });
 });
