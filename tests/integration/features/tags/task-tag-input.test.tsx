@@ -107,10 +107,18 @@ describe('TaskTagInput & TaskTagRemovalModal (integration/features/tags)', () =>
       expect(suggestion).toHaveFocus();
       expect(screen.queryByRole('button', { name: es.tasks.removeTagAria('front') })).not.toBeInTheDocument();
 
-      // Pressing Enter selects the canonical suggestion
+      // Pressing Enter selects the canonical suggestion and keeps focus on the main tag input
       await user.keyboard('{Enter}');
       expect(screen.getByText('Frontend')).toBeInTheDocument();
       expect(input).toHaveValue('');
+      expect(input).toHaveFocus();
+
+      // Pointer-clicking a suggestion also returns focus to the main tag input
+      await user.type(input, 'trab');
+      await user.click(screen.getByRole('button', { name: 'Trabajo' }));
+      expect(screen.getByText('Trabajo')).toBeInTheDocument();
+      expect(input).toHaveValue('');
+      expect(input).toHaveFocus();
 
       // Typing a new valid tag and blurring outside the composite container auto-captures it
       await user.type(input, 'NuevaEtiqueta');

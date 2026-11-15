@@ -133,6 +133,10 @@ test.describe('Tags Feature End-to-End Workflow (003-tags)', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await expect(personalGroupCard).toBeVisible();
     await expect(uniCard).toBeVisible();
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(hasHorizontalOverflow).toBe(false);
 
     expect(consoleErrors).toEqual([]);
   });

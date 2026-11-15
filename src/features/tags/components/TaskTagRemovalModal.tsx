@@ -8,6 +8,7 @@ export interface TaskTagRemovalModalProps {
   onClose: () => void;
   onRemoveOnlyFromTask: () => void;
   onRemoveFromGroup: () => void;
+  onExited?: () => void;
 }
 
 /**
@@ -20,11 +21,18 @@ export function TaskTagRemovalModal({
   onClose,
   onRemoveOnlyFromTask,
   onRemoveFromGroup,
+  onExited,
 }: TaskTagRemovalModalProps) {
   const resolvedTagName = tagName ?? '';
 
   return (
-    <Modal show={show} onHide={onClose} centered>
+    <Modal
+      show={show}
+      onHide={onClose}
+      onExited={onExited}
+      restoreFocus={!onExited}
+      centered
+    >
       <Modal.Header closeButton>
         <Modal.Title className="fs-5">{es.tasks.removeTagTitle}</Modal.Title>
       </Modal.Header>

@@ -72,7 +72,6 @@ export function TaskFormModal({
 
   const handleCloseRemovalModal = () => {
     setPendingRemovalTagName(null);
-    tagInputRef.current?.focusInput();
   };
 
   const handleConfirmRemoveOnlyFromTask = async () => {
@@ -85,7 +84,6 @@ export function TaskFormModal({
     removePendingTagFromForm(tagName);
     setPendingRemovalTagName(null);
     onTagMutated?.();
-    tagInputRef.current?.focusInput();
   };
 
   const handleConfirmRemoveFromGroup = async () => {
@@ -98,7 +96,6 @@ export function TaskFormModal({
     removePendingTagFromForm(tagName);
     setPendingRemovalTagName(null);
     onTagMutated?.();
-    tagInputRef.current?.focusInput();
   };
 
   return (
@@ -186,8 +183,9 @@ export function TaskFormModal({
 
             {/* Tags */}
             <Form.Group className="mb-2">
-              <Form.Label>{es.tasks.tagsLabel}</Form.Label>
+              <Form.Label htmlFor="task-tags-input">{es.tasks.tagsLabel}</Form.Label>
               <TaskTagInput
+                inputId="task-tags-input"
                 ref={tagInputRef}
                 value={watchedTagNames}
                 onChange={(tags) => form.setValue('tagNames', tags)}
@@ -220,6 +218,7 @@ export function TaskFormModal({
         show={Boolean(pendingRemovalTagName)}
         tagName={pendingRemovalTagName}
         onClose={handleCloseRemovalModal}
+        onExited={() => tagInputRef.current?.focusInput()}
         onRemoveOnlyFromTask={() => {
           void handleConfirmRemoveOnlyFromTask();
         }}

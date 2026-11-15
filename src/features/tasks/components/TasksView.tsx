@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -35,6 +35,8 @@ export function TasksView() {
     removeTagFromTask,
     deleteTagFromGroup,
   } = useTasks();
+
+  const lastRemovalTaskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     init();
@@ -128,9 +130,10 @@ export function TasksView() {
             onMove={(task) => openModal('move', task.id)}
             onCopy={(task) => openModal('copy', task.id)}
             onDelete={(task) => openModal('delete', task.id)}
-            onRemoveTag={(task, tag) =>
-              openModal('tagRemoval', task.id, { tagId: tag.id, tagName: tag.name })
-            }
+            onRemoveTag={(task, tag) => {
+              lastRemovalTaskIdRef.current = task.id;
+              openModal('tagRemoval', task.id, { tagId: tag.id, tagName: tag.name });
+            }}
           />
         </main>
       )}
@@ -159,14 +162,21 @@ export function TasksView() {
         show={modalState.type === 'tagRemoval'}
         tagName={modalState.tagName ?? null}
         onClose={closeModal}
-        onRemoveOnlyFromTask={() => {
-          if (modalState.taskId && modalState.tagId) {
-            removeTagFromTask(modalState.taskId, modalState.tagId);
+        onExited={() => {
+          const taskId = lastRemovalTaskIdRef.current;
+          lastRemovalTaskIdRef.current = null;
+          if (taskId) {
+            document.getElementById(`task-check-${taskId}`)?.focus();
           }
         }}
-        onRemoveFromGroup={() => {
+        onRemoveOnlyFromTask={async () => {
+          if (modalState.taskId && modalState.tagId) {
+            await removeTagFromTask(modalState.taskId, modalState.tagId);
+          }
+        }}
+        onRemoveFromGroup={async () => {
           if (modalState.tagId) {
-            deleteTagFromGroup(modalState.tagId);
+            await deleteTagFromGroup(modalState.tagId);
           }
         }}
       />

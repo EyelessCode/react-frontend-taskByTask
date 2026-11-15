@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MockStorage } from '../../../mocks/mock-storage';
 import { LocalStorageAdapter } from '@/data/storage';
@@ -79,10 +79,14 @@ describe('Tag Removal & Multi-Group Integration Flows (integration/features/tags
     render(<GroupsGridView />);
     await screen.findByText('Tarea A');
 
-    // Remove 'Unica' via "Solo de la tarea"
+    // Remove 'Unica' via "Solo de la tarea" and verify focus returns to originating TaskCard control
     await user.click(screen.getByRole('button', { name: es.tasks.removeTagAria('Unica') }));
     expect(screen.getByText(es.tasks.removeTagDescription)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: es.tasks.removeOnlyFromTask }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: /Marcar tarea "Tarea A"/i })).toHaveFocus();
+    });
 
     expect(screen.queryByRole('button', { name: es.tasks.removeTagAria('Unica') })).not.toBeInTheDocument();
     // Tag 'Unica' remains in group catalog
@@ -126,11 +130,20 @@ describe('Tag Removal & Multi-Group Integration Flows (integration/features/tags
     await user.type(tagInput, 'SesionNueva;');
     expect(screen.getByText('SesionNueva')).toBeInTheDocument();
 
-    // Click × on persisted tag chip
+    // Click × on persisted tag chip, cancel first to verify focus return, then confirm
     await user.click(screen.getByRole('button', { name: es.tasks.removeTagAria('Persistida') }));
     expect(screen.getByText(es.tasks.removeTagDescription)).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: es.common.cancel }).at(-1)!);
+    await waitFor(() => {
+      expect(tagInput).toHaveFocus();
+    });
 
+    await user.click(screen.getByRole('button', { name: es.tasks.removeTagAria('Persistida') }));
     await user.click(screen.getByRole('button', { name: es.tasks.removeOnlyFromTask }));
+
+    await waitFor(() => {
+      expect(tagInput).toHaveFocus();
+    });
 
     // Unsaved title and session tag are preserved
     expect(titleInput).toHaveValue('Título editado sin guardar');

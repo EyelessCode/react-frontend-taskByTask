@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
@@ -59,6 +59,7 @@ export function GroupsGridView() {
   } = useTasks();
 
   const [inlineGroupId, setInlineGroupId] = useState<string | null>(null);
+  const lastRemovalTaskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     void init();
@@ -178,12 +179,13 @@ export function GroupsGridView() {
                 onMoveTask={(task) => tasksOpenModal('move', task.id)}
                 onCopyTask={(task) => tasksOpenModal('copy', task.id)}
                 onDeleteTask={(task) => tasksOpenModal('delete', task.id)}
-                onRemoveTag={(task, tag) =>
+                onRemoveTag={(task, tag) => {
+                  lastRemovalTaskIdRef.current = task.id;
                   tasksOpenModal('tagRemoval', task.id, {
                     tagId: tag.id,
                     tagName: tag.name,
-                  })
-                }
+                  });
+                }}
               />
             </Col>
           ))}
@@ -247,6 +249,13 @@ export function GroupsGridView() {
         show={taskModalState.type === 'tagRemoval'}
         tagName={taskModalState.tagName ?? null}
         onClose={tasksCloseModal}
+        onExited={() => {
+          const taskId = lastRemovalTaskIdRef.current;
+          lastRemovalTaskIdRef.current = null;
+          if (taskId) {
+            document.getElementById(`task-check-${taskId}`)?.focus();
+          }
+        }}
         onRemoveOnlyFromTask={async () => {
           if (taskModalState.taskId && taskModalState.tagId) {
             await removeTagFromTask(

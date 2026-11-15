@@ -19,6 +19,7 @@ export interface TaskTagInputProps {
   onRemoveRequest?: (tagName: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  inputId?: string;
   ref?: Ref<TaskTagInputHandle>;
 }
 
@@ -34,6 +35,7 @@ export function TaskTagInput({
   onRemoveRequest,
   disabled = false,
   placeholder = es.tasks.tagsPlaceholder,
+  inputId,
   ref,
 }: TaskTagInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +68,11 @@ export function TaskTagInput({
     persistedTagNames,
     onRemoveRequest,
   });
+
+  const handleSelectSuggestion = (suggestionName: string) => {
+    selectSuggestion(suggestionName);
+    inputRef.current?.focus();
+  };
 
   useImperativeHandle(ref, () => ({
     commitPendingInput: commitPendingBeforeSubmit,
@@ -137,6 +144,7 @@ export function TaskTagInput({
       )}
 
       <Form.Control
+        id={inputId}
         ref={inputRef}
         type="text"
         size="sm"
@@ -176,7 +184,7 @@ export function TaskTagInput({
               as="button"
               type="button"
               className="py-1 px-3 small text-start"
-              onClick={() => selectSuggestion(suggestion.name)}
+              onClick={() => handleSelectSuggestion(suggestion.name)}
               onBlur={(e) => handleCompositeBlur(e.relatedTarget, containerRef.current)}
             >
               <span aria-hidden="true" className="me-1">
