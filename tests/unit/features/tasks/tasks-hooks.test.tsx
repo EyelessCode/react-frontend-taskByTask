@@ -133,6 +133,57 @@ describe('Tasks Custom Hooks (unit/features/tasks/tasks-hooks)', () => {
       expect(successCalled).toBe(true);
       expect(useTasksStore.getState().tasks[0].title).toBe('Título actualizado');
     });
+
+    it('should resolve groupTags and persistedTagNames for task.groupId even when activeGroupId differs', async () => {
+      await groupRepository.save(workGroup);
+      await tagRepository.ensureTag(SEED_PERSONAL_GROUP.id, 'Hogar');
+      const workTag = await tagRepository.ensureTag('grp-work', 'Sprint');
+      await useTasksStore.getState().init();
+
+      const workTask: Task = {
+        id: 'task-work-1',
+        title: 'Tarea secundaria',
+        groupId: 'grp-work',
+        tagIds: [workTag.id],
+        completed: false,
+        createdAt: '2026-11-01T10:00:00.000Z',
+      };
+      await taskRepository.save(workTask);
+
+      const { result } = renderHook(() => useTaskForm({ task: workTask }));
+
+      expect(result.current.groupTags.map((t) => t.name)).toEqual(['Sprint']);
+      expect(result.current.persistedTagNames).toEqual(['Sprint']);
+      expect(result.current.form.getValues('tagNames')).toEqual(['Sprint']);
+    });
+
+    it('should preserve unsaved form edits when store tags update in the background', async () => {
+      await useTasksStore.getState().init();
+      const created = await useTasksStore.getState().createTask({
+        title: 'Título inicial',
+        tagNames: ['Inicial'],
+        groupId: SEED_PERSONAL_GROUP.id,
+      });
+
+      const { result } = renderHook(() => useTaskForm({ task: created }));
+
+      act(() => {
+        result.current.form.setValue('title', 'Título sin guardar');
+        result.current.form.setValue('tagNames', ['Inicial', 'Temporal']);
+      });
+
+      // Background store tag mutation while modal is open for the same task
+      await act(async () => {
+        await useTasksStore.getState().createTask({
+          title: 'Otra tarea',
+          tagNames: ['NuevaEnFondo'],
+          groupId: SEED_PERSONAL_GROUP.id,
+        });
+      });
+
+      expect(result.current.form.getValues('title')).toBe('Título sin guardar');
+      expect(result.current.form.getValues('tagNames')).toEqual(['Inicial', 'Temporal']);
+    });
   });
 
   describe('useTaskMoveCopy', () => {

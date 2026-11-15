@@ -313,4 +313,74 @@ describe('useTasksStore (unit/features/tasks/tasks-store)', () => {
     await useTasksStore.getState().setActiveGroup('grp-work');
     expect(useTasksStore.getState().activeGroupId).toBe('grp-work');
   });
+
+  it('should keep allTags synchronized across groups on init, create, update, move, copy, and deleteTagFromGroup', async () => {
+    await groupRepository.save(workGroup);
+    await tagRepository.ensureTag(SEED_PERSONAL_GROUP.id, 'Hogar');
+    await tagRepository.ensureTag('grp-work', 'Sprint');
+
+    await useTasksStore.getState().init();
+    expect(useTasksStore.getState().tags.map((t) => t.name)).toEqual(['Hogar']);
+    expect(useTasksStore.getState().allTags.map((t) => t.name)).toEqual(
+      expect.arrayContaining(['Hogar', 'Sprint']),
+    );
+
+    // Create task in non-active group (grp-work)
+    const workTask = await useTasksStore.getState().createTask({
+      title: 'Tarea en trabajo',
+      tagNames: ['Urgente'],
+      groupId: 'grp-work',
+    });
+    expect(useTasksStore.getState().tags.map((t) => t.name)).toEqual(['Hogar']);
+    expect(useTasksStore.getState().allTags.map((t) => t.name)).toEqual(
+      expect.arrayContaining(['Hogar', 'Sprint', 'Urgente']),
+    );
+
+    // Update task in non-active group with a new tag while preserving original tag in catalog
+    await useTasksStore.getState().updateTask(workTask.id, {
+      tagNames: ['Sprint'],
+    });
+    expect(useTasksStore.getState().allTags.map((t) => t.name)).toEqual(
+      expect.arrayContaining(['Hogar', 'Sprint', 'Urgente']),
+    );
+
+    // Move task from personal to work group syncs allTags
+    const personalTask = await useTasksStore.getState().createTask({
+      title: 'Mover a trabajo',
+      tagNames: ['Viaje'],
+      groupId: SEED_PERSONAL_GROUP.id,
+    });
+    await useTasksStore.getState().moveTask(personalTask.id, 'grp-work');
+    const workViaje = useTasksStore
+      .getState()
+      .allTags.find((t) => t.groupId === 'grp-work' && t.name === 'Viaje');
+    expect(workViaje).toBeDefined();
+
+    // Copy task to personal group syncs allTags
+    await useTasksStore.getState().copyTask(workTask.id, SEED_PERSONAL_GROUP.id);
+    const personalSprint = useTasksStore
+      .getState()
+      .allTags.find((t) => t.groupId === SEED_PERSONAL_GROUP.id && t.name === 'Sprint');
+    expect(personalSprint).toBeDefined();
+
+    // Delete tag from group removes it from both tags and allTags
+    await useTasksStore.getState().deleteTagFromGroup(workViaje!.id);
+    expect(useTasksStore.getState().allTags.some((t) => t.id === workViaje!.id)).toBe(false);
+  });
+
+  it('should deduplicate tagIds on createTask and updateTask when case-insensitive duplicates are supplied', async () => {
+    await useTasksStore.getState().init();
+
+    const created = await useTasksStore.getState().createTask({
+      title: 'Deduplicar en creación',
+      tagNames: ['Trabajo', 'trabajo', 'TRABAJO', 'Urgente'],
+      groupId: SEED_PERSONAL_GROUP.id,
+    });
+    expect(created.tagIds).toHaveLength(2);
+
+    const updated = await useTasksStore.getState().updateTask(created.id, {
+      tagNames: ['urgente', 'URGENTE', 'Nueva'],
+    });
+    expect(updated.tagIds).toHaveLength(2);
+  });
 });

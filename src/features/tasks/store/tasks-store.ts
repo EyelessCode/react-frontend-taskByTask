@@ -34,6 +34,7 @@ export interface TasksState {
   tasks: Task[];
   groups: Group[];
   tags: Tag[];
+  allTags: Tag[];
   activeGroupId: string;
   activeFilter: TaskFilter;
   isLoading: boolean;
@@ -83,6 +84,7 @@ const initialState: TasksState = {
   tasks: [],
   groups: [],
   tags: [],
+  allTags: [],
   activeGroupId: 'group-personal',
   activeFilter: 'pendientes',
   isLoading: false,
@@ -94,6 +96,17 @@ const initialState: TasksState = {
     tagName: null,
   },
 };
+
+async function ensureDeduplicatedTagIds(groupId: string, tagNames: string[]): Promise<string[]> {
+  const tagIds: string[] = [];
+  for (const name of tagNames) {
+    const tag = await deps.tagRepository.ensureTag(groupId, name);
+    if (!tagIds.includes(tag.id)) {
+      tagIds.push(tag.id);
+    }
+  }
+  return tagIds;
+}
 
 export const useTasksStore = create<TasksStore>()((set, get) => ({
   ...initialState,
@@ -111,9 +124,10 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         ? currentActive
         : personalGroup?.id ?? allGroups[0]?.id ?? 'group-personal';
 
-      const [groupTasks, groupTags] = await Promise.all([
+      const [groupTasks, groupTags, allTags] = await Promise.all([
         deps.taskRepository.getByGroupId(resolvedActive),
         deps.tagRepository.getByGroupId(resolvedActive),
+        deps.tagRepository.getAll(),
       ]);
 
       set({
@@ -121,6 +135,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         activeGroupId: resolvedActive,
         tasks: groupTasks,
         tags: groupTags,
+        allTags,
         isLoading: false,
       });
     } catch (err) {
@@ -131,13 +146,15 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   setActiveGroup: async (groupId: string) => {
     set({ isLoading: true, error: null, activeGroupId: groupId });
     try {
-      const [groupTasks, groupTags] = await Promise.all([
+      const [groupTasks, groupTags, allTags] = await Promise.all([
         deps.taskRepository.getByGroupId(groupId),
         deps.tagRepository.getByGroupId(groupId),
+        deps.tagRepository.getAll(),
       ]);
       set({
         tasks: groupTasks,
         tags: groupTags,
+        allTags,
         isLoading: false,
       });
     } catch (err) {
@@ -173,14 +190,10 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   createTask: async (payload: TaskFormInput) => {
     const targetGroupId = payload.groupId || get().activeGroupId;
-    const tagIds: string[] = [];
-
-    if (payload.tagNames && payload.tagNames.length > 0) {
-      for (const name of payload.tagNames) {
-        const tag = await deps.tagRepository.ensureTag(targetGroupId, name);
-        tagIds.push(tag.id);
-      }
-    }
+    const tagIds =
+      payload.tagNames && payload.tagNames.length > 0
+        ? await ensureDeduplicatedTagIds(targetGroupId, payload.tagNames)
+        : [];
 
     const id =
       typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -204,13 +217,17 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(newTask);
+    const allTags = await deps.tagRepository.getAll();
 
     if (targetGroupId === get().activeGroupId) {
-      const updatedTags = await deps.tagRepository.getByGroupId(targetGroupId);
+      const updatedTags = allTags.filter((t) => t.groupId === targetGroupId);
       set((state) => ({
         tasks: [...state.tasks, newTask],
         tags: updatedTags,
+        allTags,
       }));
+    } else {
+      set({ allTags });
     }
 
     return newTask;
@@ -222,14 +239,10 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
       throw new NotFoundError('Tarea', taskId);
     }
 
-    let tagIds = existing.tagIds ?? [];
-    if (payload.tagNames !== undefined) {
-      tagIds = [];
-      for (const name of payload.tagNames) {
-        const tag = await deps.tagRepository.ensureTag(existing.groupId, name);
-        tagIds.push(tag.id);
-      }
-    }
+    const tagIds =
+      payload.tagNames !== undefined
+        ? await ensureDeduplicatedTagIds(existing.groupId, payload.tagNames)
+        : existing.tagIds ?? [];
 
     const updatedTask: Task = {
       ...existing,
@@ -246,13 +259,17 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(updatedTask);
+    const allTags = await deps.tagRepository.getAll();
 
     if (existing.groupId === get().activeGroupId) {
-      const updatedTags = await deps.tagRepository.getByGroupId(existing.groupId);
+      const updatedTags = allTags.filter((t) => t.groupId === existing.groupId);
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
         tags: updatedTags,
+        allTags,
       }));
+    } else {
+      set({ allTags });
     }
 
     return updatedTask;
@@ -296,7 +313,9 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         const tag = await deps.tagRepository.getById(tagId);
         if (tag) {
           const synced = await deps.tagRepository.ensureTag(targetGroupId, tag.name);
-          newTagIds.push(synced.id);
+          if (!newTagIds.includes(synced.id)) {
+            newTagIds.push(synced.id);
+          }
         }
       }
     }
@@ -308,14 +327,19 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(movedTask);
+    const allTags = await deps.tagRepository.getAll();
 
     if (get().activeGroupId !== targetGroupId) {
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== taskId),
+        allTags,
       }));
     } else {
+      const updatedTags = allTags.filter((t) => t.groupId === targetGroupId);
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === taskId ? movedTask : t)),
+        tags: updatedTags,
+        allTags,
       }));
     }
   },
@@ -332,7 +356,9 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         const tag = await deps.tagRepository.getById(tagId);
         if (tag) {
           const synced = await deps.tagRepository.ensureTag(targetGroupId, tag.name);
-          newTagIds.push(synced.id);
+          if (!newTagIds.includes(synced.id)) {
+            newTagIds.push(synced.id);
+          }
         }
       }
     }
@@ -351,13 +377,17 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     };
 
     await deps.taskRepository.save(copiedTask);
+    const allTags = await deps.tagRepository.getAll();
 
     if (get().activeGroupId === targetGroupId) {
-      const updatedTags = await deps.tagRepository.getByGroupId(targetGroupId);
+      const updatedTags = allTags.filter((t) => t.groupId === targetGroupId);
       set((state) => ({
         tasks: [...state.tasks, copiedTask],
         tags: updatedTags,
+        allTags,
       }));
+    } else {
+      set({ allTags });
     }
 
     return copiedTask;
@@ -397,6 +427,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
     set((state) => ({
       tags: state.tags.filter((t) => t.id !== tagId),
+      allTags: state.allTags.filter((t) => t.id !== tagId),
       tasks: state.tasks.map((t) => ({
         ...t,
         tagIds: (t.tagIds ?? []).filter((id) => id !== tagId),

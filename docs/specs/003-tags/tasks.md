@@ -45,7 +45,7 @@
   - **Done when:** All pure tag utility functions in `tag-operations.ts` pass unit tests with 100% branch coverage.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: Multi-Group Tag Store Hydration & Non-Destructive Form Hook Resolution (`tasks-store.ts`, `use-task-form.ts`)**
+- [x] **T3: Multi-Group Tag Store Hydration & Non-Destructive Form Hook Resolution (`tasks-store.ts`, `use-task-form.ts`)**
   - **Associated Requirements:** `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-14`, `REQ-TG-18`, `REQ-TG-19`, `REQ-TG-20`, `REQ-TG-23`, `REQ-TG-24`, `REQ-TG-25`, `AC-TG-03`, `AC-TG-04`, `AC-TG-05`, `AC-TG-07`, `AC-TG-09`, `AC-TG-11`
   - **Files Touched:**
     - `tests/unit/features/tasks/tasks-store.test.ts` (modified - add unit tests for multi-group `allTags` hydration, intra-task `tagIds` deduplication, and multi-group tag removal/update)
