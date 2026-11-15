@@ -1,0 +1,62 @@
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import { es } from '../../../shared/i18n';
+
+export interface TaskTagRemovalModalProps {
+  show: boolean;
+  tagName: string | null;
+  onClose: () => void;
+  onRemoveOnlyFromTask: () => void;
+  onRemoveFromGroup: () => void;
+}
+
+/**
+ * UI-06 confirmation dialog allowing the user to remove a persisted tag
+ * only from the target task or permanently from the entire group.
+ */
+export function TaskTagRemovalModal({
+  show,
+  tagName,
+  onClose,
+  onRemoveOnlyFromTask,
+  onRemoveFromGroup,
+}: TaskTagRemovalModalProps) {
+  const resolvedTagName = tagName ?? '';
+
+  return (
+    <Modal show={show} onHide={onClose} centered>
+      <Modal.Header closeButton>
+        <Modal.Title className="fs-5">{es.tasks.removeTagTitle}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <p className="mb-2">{es.tasks.removeTagPrompt(resolvedTagName)}</p>
+        <p className="text-muted small mb-0">{es.tasks.removeTagDescription}</p>
+      </Modal.Body>
+      <Modal.Footer className="d-flex flex-wrap gap-2">
+        <Button variant="secondary" size="sm" onClick={onClose}>
+          {es.common.cancel}
+        </Button>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={() => {
+            onRemoveOnlyFromTask();
+            onClose();
+          }}
+        >
+          {es.tasks.removeOnlyFromTask}
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={() => {
+            onRemoveFromGroup();
+            onClose();
+          }}
+        >
+          {es.tasks.removeFromGroup}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}

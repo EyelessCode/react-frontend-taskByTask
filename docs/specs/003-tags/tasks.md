@@ -58,7 +58,7 @@
   - **Done when:** `tasks-store.ts` and `use-task-form.ts` resolve group tags accurately for any group and preserve unsaved form edits during tag mutations, passing all unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Tag Input Hook, Inline Chip Editing & Confirmation Modal (`use-tag-input.ts`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
+- [x] **T4: Tag Input Hook, Inline Chip Editing & Confirmation Modal (`use-tag-input.ts`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
   - **Associated Requirements:** `REQ-TG-03`, `REQ-TG-06`, `REQ-TG-06b`, `REQ-TG-07`, `REQ-TG-08`, `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-11`, `REQ-TG-12`, `REQ-TG-12b`, `REQ-TG-13`, `REQ-TG-15`, `REQ-TG-16`, `REQ-TG-20`, `REQ-TG-26`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `AC-TG-01`..`AC-TG-07`, `AC-TG-12`
   - **Files Touched:**
     - `tests/integration/features/tags/task-tag-input.test.tsx` (created)
