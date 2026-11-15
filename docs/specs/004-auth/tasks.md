@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Spanish Auth Localization, Lockout Schema & Storage Key (`RNF-06`, `RNF-14`, `RNF-19`)**
+- [x] **T1: Spanish Auth Localization, Lockout Schema & Storage Key (`RNF-06`, `RNF-14`, `RNF-19`)**
   - **Associated Requirements:** `REQ-AU-06`, `REQ-AU-16`, `REQ-AU-23`, Section 4.1, Section 4.4
   - **Files Touched:**
     - `tests/unit/shared/i18n/es.test.ts` (modified — assertions for `es.auth` keys and cooldown interpolation templates)

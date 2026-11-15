@@ -13,6 +13,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
     expect(dict.tasks).toBeDefined();
     expect(dict.groups).toBeDefined();
     expect(dict.tags).toBeDefined();
+    expect(dict.auth).toBeDefined();
   });
 
   describe('app namespace', () => {
@@ -236,6 +237,123 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.groups.taskCount(0)).toBe('0 tareas');
       expect(es.groups.taskCount(1)).toBe('1 tarea');
       expect(es.groups.taskCount(5)).toBe('5 tareas');
+    });
+  });
+
+  describe('auth namespace', () => {
+    it('should contain all required auth, recovery, profile, deletion, and 12h capture keys in Spanish', () => {
+      expect(es.auth.profileLink).toBe('Mi perfil');
+      expect(es.auth.logoutButton).toBe('Cerrar sesión');
+      expect(es.auth.backToWorkspace).toBe('Volver a mis grupos');
+      expect(es.auth.greetingPrefix).toBe('Hola,');
+
+      expect(es.auth.loginTitle).toBe('Iniciar sesión');
+      expect(es.auth.loginSubtitle).toBe('Accede a tus grupos y tareas');
+      expect(es.auth.emailLabel).toBe('Correo electrónico');
+      expect(es.auth.emailPlaceholder).toBe('tu@correo.com');
+      expect(es.auth.emailRequired).toBe('El correo electrónico es obligatorio.');
+      expect(es.auth.passwordLabel).toBe('Contraseña');
+      expect(es.auth.passwordPlaceholder).toBe('Ingresa tu contraseña');
+      expect(es.auth.passwordRequiredOnLogin).toBe('Ingresa tu contraseña.');
+      expect(es.auth.loginButton).toBe('Entrar');
+      expect(es.auth.invalidCredentials).toBe('Correo electrónico o contraseña incorrectos.');
+      expect(es.auth.tooManyAttemptsMinutes(5)).toBe(
+        'Demasiados intentos fallidos. Espera 5 min antes de intentar de nuevo.',
+      );
+      expect(es.auth.tooManyAttemptsSeconds(45)).toBe(
+        'Demasiados intentos fallidos. Espera 45 s antes de intentar de nuevo.',
+      );
+      expect(es.auth.sessionExpired).toBe(
+        'Tu sesión ha expirado. Inicia sesión nuevamente.',
+      );
+      expect(es.auth.goToRegister).toBe('¿No tienes cuenta? Regístrate');
+      expect(es.auth.goToRecover).toBe('¿Olvidaste tu contraseña?');
+
+      expect(es.auth.registerTitle).toBe('Crear cuenta');
+      expect(es.auth.registerSubtitle).toBe('Comienza a organizar tus tareas por grupos');
+      expect(es.auth.usernameLabel).toBe('Nombre de usuario');
+      expect(es.auth.usernamePlaceholder).toBe('Ej. usuario123 (solo letras y números)');
+      expect(es.auth.displayNameLabel).toBe('Nombre para mostrar');
+      expect(es.auth.displayNamePlaceholder).toBe('Ej. Ana García');
+      expect(es.auth.registerButton).toBe('Registrarse');
+      expect(es.auth.goToLogin).toBe('¿Ya tienes cuenta? Inicia sesión');
+      expect(es.auth.emailAlreadyExists).toBe(
+        'Ya existe un registro con este correo electrónico',
+      );
+      expect(es.auth.usernameAlreadyExists).toBe(
+        'Ya existe un registro con este nombre de usuario',
+      );
+      expect(es.auth.recoveryCodesTitle).toBe('Guarda tus códigos de recuperación');
+      expect(es.auth.recoveryCodesWarning).toBe(
+        'Estos 8 códigos se muestran una sola vez y son de un solo uso. Guárdalos en un lugar seguro; si los pierdes y olvidas tu contraseña, no podrás recuperar el acceso a tu cuenta.',
+      );
+      expect(es.auth.copyRecoveryCodes).toBe('Copiar códigos');
+      expect(es.auth.copiedRecoveryCodes).toBe('Códigos copiados');
+      expect(es.auth.continueToApp).toBe('He guardado mis códigos, continuar');
+
+      expect(es.auth.recoverTitle).toBe('Recuperar contraseña');
+      expect(es.auth.recoverSubtitle).toBe(
+        'Usa uno de tus códigos de recuperación de un solo uso',
+      );
+      expect(es.auth.recoveryCodeLabel).toBe('Código de recuperación');
+      expect(es.auth.recoveryCodePlaceholder).toBe('Código de 8 caracteres');
+      expect(es.auth.recoveryCodeRequired).toBe('Ingresa un código de recuperación.');
+      expect(es.auth.recoveryCodeLengthError).toBe(
+        'El código de recuperación debe tener exactamente 8 caracteres.',
+      );
+      expect(es.auth.recoveryCodeFormatError).toBe(
+        'El código de recuperación solo puede contener letras y números.',
+      );
+      expect(es.auth.newPasswordLabel).toBe('Nueva contraseña');
+      expect(es.auth.recoverButton).toBe('Restablecer contraseña');
+      expect(es.auth.invalidRecoveryRequest).toBe(
+        'El correo o el código de recuperación no es válido o ya fue utilizado.',
+      );
+      expect(es.auth.recoverSuccess).toBe(
+        'Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.',
+      );
+      expect(es.auth.recoverLimitationNote).toBe(
+        'Cada código es de un solo uso. Si agotaste o perdiste todos tus códigos, no es posible recuperar la cuenta en esta versión.',
+      );
+
+      expect(es.auth.profileTitle).toBe('Perfil y preferencias');
+      expect(es.auth.profileSectionTitle).toBe('Datos de la cuenta');
+      expect(es.auth.timeFormatLabel).toBe('Formato de hora');
+      expect(es.auth.timeFormat24h).toBe('24 horas (ej. 14:30)');
+      expect(es.auth.timeFormat12h).toBe('12 horas (ej. 02:30 p. m.)');
+      expect(es.auth.timeZoneLabel).toBe('Zona horaria detectada');
+      expect(es.auth.timeZoneHint).toBe('Se actualiza automáticamente al iniciar sesión.');
+      expect(es.auth.saveProfileButton).toBe('Guardar cambios');
+      expect(es.auth.profileSaved).toBe('Perfil y preferencias actualizados.');
+      expect(es.auth.passwordSectionTitle).toBe('Cambiar contraseña');
+      expect(es.auth.currentPasswordLabel).toBe('Contraseña actual');
+      expect(es.auth.currentPasswordRequired).toBe('Ingresa tu contraseña actual.');
+      expect(es.auth.invalidCurrentPassword).toBe('La contraseña actual es incorrecta.');
+      expect(es.auth.changePasswordButton).toBe('Actualizar contraseña');
+      expect(es.auth.passwordChanged).toBe('Contraseña actualizada correctamente.');
+      expect(es.auth.regenerateSectionTitle).toBe('Códigos de recuperación');
+      expect(es.auth.regenerateDescription).toBe(
+        'Regenerar tus códigos invalida todos los códigos anteriores y genera 8 nuevos códigos mostrados una sola vez.',
+      );
+      expect(es.auth.regenerateButton).toBe('Regenerar códigos');
+      expect(es.auth.regeneratedCodesTitle).toBe('Nuevos códigos de recuperación');
+
+      expect(es.auth.dangerZoneTitle).toBe('Eliminar cuenta');
+      expect(es.auth.deleteAccountButton).toBe('Eliminar mi cuenta');
+      expect(es.auth.deleteAccountModalTitle).toBe('Eliminar cuenta permanentemente');
+      expect(es.auth.deleteAccountWarning).toBe(
+        'Esta acción es irreversible. Se eliminarán de forma permanente tu cuenta, todos tus grupos, tareas, etiquetas, códigos de recuperación y notificaciones.',
+      );
+      expect(es.auth.deleteAccountConfirmButton).toBe('Eliminar cuenta definitivamente');
+      expect(es.auth.accountDeleted).toBe('Tu cuenta y todos tus datos han sido eliminados.');
+
+      expect(es.auth.timeHourAria).toBe('Hora (12 horas)');
+      expect(es.auth.timeMinuteAria).toBe('Minutos');
+      expect(es.auth.timePeriodAria).toBe('Periodo (AM/PM)');
+      expect(es.auth.clearTimeLabel).toBe('Limpiar hora');
+      expect(es.auth.incompleteTimeError).toBe(
+        'Completa la hora, los minutos y el periodo (AM/PM), o limpia la hora.',
+      );
     });
   });
 });

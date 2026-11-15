@@ -8,6 +8,7 @@ import {
   userSchema,
   recoveryCodeSchema,
   sessionSchema,
+  loginLockoutSchema,
   groupSchema,
   groupMemberSchema,
   SEED_PERSONAL_GROUP,
@@ -26,6 +27,7 @@ import {
   type Reminder,
   type Notification,
   type Session,
+  type LoginLockoutState,
   type RecoveryCode,
   type Invitation,
 } from '@/shared/schemas';
@@ -206,6 +208,40 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         createdAt: '2026-11-02T12:00:00.000Z',
       };
       expect(sessionSchema.safeParse(session).success).toBe(true);
+    });
+
+    it('should validate LoginLockoutState schema and enforce 0..5 attempt bounds (RNF-06)', () => {
+      const validUnlocked: LoginLockoutState = {
+        normalizedEmail: 'user@example.com',
+        failedAttempts: 3,
+        lockedUntil: null,
+      };
+      expect(loginLockoutSchema.safeParse(validUnlocked).success).toBe(true);
+
+      const validLocked: LoginLockoutState = {
+        normalizedEmail: 'USER@EXAMPLE.COM',
+        failedAttempts: 5,
+        lockedUntil: '2026-11-15T12:05:00.000Z',
+      };
+      const parsedLocked = loginLockoutSchema.parse(validLocked);
+      expect(parsedLocked.normalizedEmail).toBe('user@example.com');
+
+      expect(
+        loginLockoutSchema.safeParse({ ...validUnlocked, failedAttempts: -1 }).success,
+      ).toBe(false);
+      expect(
+        loginLockoutSchema.safeParse({ ...validUnlocked, failedAttempts: 6 }).success,
+      ).toBe(false);
+      expect(
+        loginLockoutSchema.safeParse({ ...validUnlocked, normalizedEmail: 'not-an-email' }).success,
+      ).toBe(false);
+      expect(
+        loginLockoutSchema.safeParse({ ...validUnlocked, lockedUntil: 'invalid-date' }).success,
+      ).toBe(false);
+    });
+
+    it('should expose WebCrypto subtle in Vitest jsdom environment', () => {
+      expect(typeof globalThis.crypto?.subtle?.importKey).toBe('function');
     });
   });
 

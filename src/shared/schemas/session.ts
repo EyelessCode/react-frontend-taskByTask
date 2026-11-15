@@ -14,3 +14,15 @@ export interface Session {
   expiresAt: string;
   createdAt: string;
 }
+
+export const loginLockoutSchema = z.object({
+  normalizedEmail: z.string().trim().toLowerCase().email(),
+  failedAttempts: z.number().int().min(0).max(5),
+  lockedUntil: isoDateTimeSchema.nullable(),
+});
+
+export interface LoginLockoutState {
+  normalizedEmail: string;
+  failedAttempts: number;
+  lockedUntil: string | null;
+}

@@ -9,4 +9,5 @@ export const STORAGE_KEYS = {
   NOTIFICATIONS: `${STORAGE_PREFIX}notifications`,
   SESSION: `${STORAGE_PREFIX}session`,
   RECOVERY_CODES: `${STORAGE_PREFIX}recovery_codes`,
+  LOGIN_LOCKOUTS: `${STORAGE_PREFIX}login_lockouts`,
 } as const;

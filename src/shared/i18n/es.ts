@@ -37,6 +37,86 @@ export interface LocalizationDictionary {
   tasks: TasksLocalization;
   groups: GroupsLocalization;
   tags: TagsLocalization;
+  auth: AuthLocalization;
+}
+
+export interface AuthLocalization {
+  profileLink: string;
+  logoutButton: string;
+  backToWorkspace: string;
+  greetingPrefix: string;
+  loginTitle: string;
+  loginSubtitle: string;
+  emailLabel: string;
+  emailPlaceholder: string;
+  emailRequired: string;
+  passwordLabel: string;
+  passwordPlaceholder: string;
+  passwordRequiredOnLogin: string;
+  loginButton: string;
+  invalidCredentials: string;
+  tooManyAttemptsMinutes: (minutes: number) => string;
+  tooManyAttemptsSeconds: (seconds: number) => string;
+  sessionExpired: string;
+  goToRegister: string;
+  goToRecover: string;
+  registerTitle: string;
+  registerSubtitle: string;
+  usernameLabel: string;
+  usernamePlaceholder: string;
+  displayNameLabel: string;
+  displayNamePlaceholder: string;
+  registerButton: string;
+  goToLogin: string;
+  emailAlreadyExists: string;
+  usernameAlreadyExists: string;
+  recoveryCodesTitle: string;
+  recoveryCodesWarning: string;
+  copyRecoveryCodes: string;
+  copiedRecoveryCodes: string;
+  continueToApp: string;
+  recoverTitle: string;
+  recoverSubtitle: string;
+  recoveryCodeLabel: string;
+  recoveryCodePlaceholder: string;
+  recoveryCodeRequired: string;
+  recoveryCodeLengthError: string;
+  recoveryCodeFormatError: string;
+  newPasswordLabel: string;
+  recoverButton: string;
+  invalidRecoveryRequest: string;
+  recoverSuccess: string;
+  recoverLimitationNote: string;
+  profileTitle: string;
+  profileSectionTitle: string;
+  timeFormatLabel: string;
+  timeFormat24h: string;
+  timeFormat12h: string;
+  timeZoneLabel: string;
+  timeZoneHint: string;
+  saveProfileButton: string;
+  profileSaved: string;
+  passwordSectionTitle: string;
+  currentPasswordLabel: string;
+  currentPasswordRequired: string;
+  invalidCurrentPassword: string;
+  changePasswordButton: string;
+  passwordChanged: string;
+  regenerateSectionTitle: string;
+  regenerateDescription: string;
+  regenerateButton: string;
+  regeneratedCodesTitle: string;
+  dangerZoneTitle: string;
+  deleteAccountButton: string;
+  deleteAccountModalTitle: string;
+  deleteAccountWarning: string;
+  deleteAccountConfirmButton: string;
+  accountDeleted: string;
+  timeHourAria: string;
+  timeMinuteAria: string;
+  timePeriodAria: string;
+  clearTimeLabel: string;
+  incompleteTimeError: string;
 }
 
 export interface TagsLocalization {
@@ -262,4 +342,88 @@ export const es = {
     taskCount: (count: number) => `${count} ${count === 1 ? 'tarea' : 'tareas'}`,
   },
   tags: tagsLocalization,
+  auth: {
+    profileLink: 'Mi perfil',
+    logoutButton: 'Cerrar sesión',
+    backToWorkspace: 'Volver a mis grupos',
+    greetingPrefix: 'Hola,',
+    loginTitle: 'Iniciar sesión',
+    loginSubtitle: 'Accede a tus grupos y tareas',
+    emailLabel: 'Correo electrónico',
+    emailPlaceholder: 'tu@correo.com',
+    emailRequired: 'El correo electrónico es obligatorio.',
+    passwordLabel: 'Contraseña',
+    passwordPlaceholder: 'Ingresa tu contraseña',
+    passwordRequiredOnLogin: 'Ingresa tu contraseña.',
+    loginButton: 'Entrar',
+    invalidCredentials: 'Correo electrónico o contraseña incorrectos.',
+    tooManyAttemptsMinutes: (minutes: number) =>
+      `Demasiados intentos fallidos. Espera ${minutes} min antes de intentar de nuevo.`,
+    tooManyAttemptsSeconds: (seconds: number) =>
+      `Demasiados intentos fallidos. Espera ${seconds} s antes de intentar de nuevo.`,
+    sessionExpired: 'Tu sesión ha expirado. Inicia sesión nuevamente.',
+    goToRegister: '¿No tienes cuenta? Regístrate',
+    goToRecover: '¿Olvidaste tu contraseña?',
+    registerTitle: 'Crear cuenta',
+    registerSubtitle: 'Comienza a organizar tus tareas por grupos',
+    usernameLabel: 'Nombre de usuario',
+    usernamePlaceholder: 'Ej. usuario123 (solo letras y números)',
+    displayNameLabel: 'Nombre para mostrar',
+    displayNamePlaceholder: 'Ej. Ana García',
+    registerButton: 'Registrarse',
+    goToLogin: '¿Ya tienes cuenta? Inicia sesión',
+    emailAlreadyExists: 'Ya existe un registro con este correo electrónico',
+    usernameAlreadyExists: 'Ya existe un registro con este nombre de usuario',
+    recoveryCodesTitle: 'Guarda tus códigos de recuperación',
+    recoveryCodesWarning:
+      'Estos 8 códigos se muestran una sola vez y son de un solo uso. Guárdalos en un lugar seguro; si los pierdes y olvidas tu contraseña, no podrás recuperar el acceso a tu cuenta.',
+    copyRecoveryCodes: 'Copiar códigos',
+    copiedRecoveryCodes: 'Códigos copiados',
+    continueToApp: 'He guardado mis códigos, continuar',
+    recoverTitle: 'Recuperar contraseña',
+    recoverSubtitle: 'Usa uno de tus códigos de recuperación de un solo uso',
+    recoveryCodeLabel: 'Código de recuperación',
+    recoveryCodePlaceholder: 'Código de 8 caracteres',
+    recoveryCodeRequired: 'Ingresa un código de recuperación.',
+    recoveryCodeLengthError: 'El código de recuperación debe tener exactamente 8 caracteres.',
+    recoveryCodeFormatError: 'El código de recuperación solo puede contener letras y números.',
+    newPasswordLabel: 'Nueva contraseña',
+    recoverButton: 'Restablecer contraseña',
+    invalidRecoveryRequest: 'El correo o el código de recuperación no es válido o ya fue utilizado.',
+    recoverSuccess: 'Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.',
+    recoverLimitationNote:
+      'Cada código es de un solo uso. Si agotaste o perdiste todos tus códigos, no es posible recuperar la cuenta en esta versión.',
+    profileTitle: 'Perfil y preferencias',
+    profileSectionTitle: 'Datos de la cuenta',
+    timeFormatLabel: 'Formato de hora',
+    timeFormat24h: '24 horas (ej. 14:30)',
+    timeFormat12h: '12 horas (ej. 02:30 p. m.)',
+    timeZoneLabel: 'Zona horaria detectada',
+    timeZoneHint: 'Se actualiza automáticamente al iniciar sesión.',
+    saveProfileButton: 'Guardar cambios',
+    profileSaved: 'Perfil y preferencias actualizados.',
+    passwordSectionTitle: 'Cambiar contraseña',
+    currentPasswordLabel: 'Contraseña actual',
+    currentPasswordRequired: 'Ingresa tu contraseña actual.',
+    invalidCurrentPassword: 'La contraseña actual es incorrecta.',
+    changePasswordButton: 'Actualizar contraseña',
+    passwordChanged: 'Contraseña actualizada correctamente.',
+    regenerateSectionTitle: 'Códigos de recuperación',
+    regenerateDescription:
+      'Regenerar tus códigos invalida todos los códigos anteriores y genera 8 nuevos códigos mostrados una sola vez.',
+    regenerateButton: 'Regenerar códigos',
+    regeneratedCodesTitle: 'Nuevos códigos de recuperación',
+    dangerZoneTitle: 'Eliminar cuenta',
+    deleteAccountButton: 'Eliminar mi cuenta',
+    deleteAccountModalTitle: 'Eliminar cuenta permanentemente',
+    deleteAccountWarning:
+      'Esta acción es irreversible. Se eliminarán de forma permanente tu cuenta, todos tus grupos, tareas, etiquetas, códigos de recuperación y notificaciones.',
+    deleteAccountConfirmButton: 'Eliminar cuenta definitivamente',
+    accountDeleted: 'Tu cuenta y todos tus datos han sido eliminados.',
+    timeHourAria: 'Hora (12 horas)',
+    timeMinuteAria: 'Minutos',
+    timePeriodAria: 'Periodo (AM/PM)',
+    clearTimeLabel: 'Limpiar hora',
+    incompleteTimeError: 'Completa la hora, los minutos y el periodo (AM/PM), o limpia la hora.',
+  },
 } as const satisfies LocalizationDictionary;
