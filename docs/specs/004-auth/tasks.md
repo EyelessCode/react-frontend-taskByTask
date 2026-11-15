@@ -56,7 +56,7 @@
   - **Done when:** All auth repository unit tests and existing repository unit tests pass.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: Auth Store (`useAuthStore`) & Session-End Hook (`RF-01`–`RF-06`, `RNF-06`, `RNF-09`, `RNF-10`, `RNF-18`)**
+- [x] **T5: Auth Store (`useAuthStore`) & Session-End Hook (`RF-01`–`RF-06`, `RNF-06`, `RNF-09`, `RNF-10`, `RNF-18`)**
   - **Associated Requirements:** `REQ-AU-01`–`REQ-AU-15`, `REQ-AU-17`–`REQ-AU-20`
   - **Files Touched:**
     - `tests/unit/features/auth/auth-store.test.ts` (created)
