@@ -31,7 +31,7 @@
   - **Done when:** All pure `12h <-> 24h` conversion and validation edge-case unit tests pass.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: Pure Auth Security Utilities & Zod Form Schemas (`RF-01`–`RF-05`, `RNF-05`, `RNF-06`, `Appendix B`)**
+- [x] **T3: Pure Auth Security Utilities & Zod Form Schemas (`RF-01`–`RF-05`, `RNF-05`, `RNF-06`, `Appendix B`)**
   - **Associated Requirements:** `REQ-AU-01`, `REQ-AU-03`, `REQ-AU-05`, `REQ-AU-06`, `REQ-AU-10`, `REQ-AU-13`, `REQ-AU-14`, `REQ-AU-15`, `REQ-AU-18`
   - **Files Touched:**
     - `tests/unit/features/auth/password-hash.test.ts` (created)
