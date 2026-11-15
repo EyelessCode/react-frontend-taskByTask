@@ -97,6 +97,7 @@ describe('GroupsGridView Integration (integration/features/groups/groups-grid-vi
       groupRepository,
       taskRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetGroupsStore();
 
@@ -104,6 +105,7 @@ describe('GroupsGridView Integration (integration/features/groups/groups-grid-vi
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
 

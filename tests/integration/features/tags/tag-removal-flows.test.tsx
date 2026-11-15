@@ -52,8 +52,18 @@ describe('Tag Removal & Multi-Group Integration Flows (integration/features/tags
     groupRepository = new LocalStorageGroupRepository(adapter);
     tagRepository = new LocalStorageTagRepository(adapter);
 
-    configureTasksStore({ taskRepository, groupRepository, tagRepository });
-    configureGroupsStore({ taskRepository, groupRepository, tagRepository });
+    configureTasksStore({
+      taskRepository,
+      groupRepository,
+      tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
+    });
+    configureGroupsStore({
+      taskRepository,
+      groupRepository,
+      tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
+    });
     resetTasksStore();
     resetGroupsStore();
 

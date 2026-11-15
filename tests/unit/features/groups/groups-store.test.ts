@@ -50,7 +50,7 @@ describe('useGroupsStore (unit/features/groups/groups-store)', () => {
     createdAt: '2026-11-01T10:00:00.000Z',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockStorage = new MockStorage();
     adapter = new LocalStorageAdapter(mockStorage);
     taskRepository = new LocalStorageTaskRepository(adapter);
@@ -61,6 +61,7 @@ describe('useGroupsStore (unit/features/groups/groups-store)', () => {
       groupRepository,
       taskRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetGroupsStore();
 
@@ -68,22 +69,47 @@ describe('useGroupsStore (unit/features/groups/groups-store)', () => {
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
+    await groupRepository.ensureSeedGroup();
   });
 
-  describe('init (REQ-GRP-16b)', () => {
-    it('should initialize store with SEED_PERSONAL_GROUP when storage is empty', async () => {
+  describe('init (REQ-GRP-16b & REQ-AU-21)', () => {
+    it('should return empty workspace when unauthenticated without seeding local-user', async () => {
+      mockStorage.clear();
+      configureGroupsStore({ getActiveUserId: () => Promise.resolve(null) });
+      configureTasksStore({ getActiveUserId: () => Promise.resolve(null) });
+
+      await useGroupsStore.getState().init();
+
+      const state = useGroupsStore.getState();
+      expect(state.groups).toEqual([]);
+      expect(state.tasks).toEqual([]);
+      expect(state.tags).toEqual([]);
+      expect(await groupRepository.getAll()).toEqual([]);
+    });
+
+    it('should self-heal missing Personal group for authenticated user and isolate from other users', async () => {
+      mockStorage.clear();
+      await groupRepository.ensureSeedGroup(); // legacy local-user group
+      configureGroupsStore({ getActiveUserId: () => Promise.resolve('user-1') });
+      configureTasksStore({ getActiveUserId: () => Promise.resolve('user-1') });
+
       await useGroupsStore.getState().init();
 
       const state = useGroupsStore.getState();
       expect(state.groups).toHaveLength(1);
-      expect(state.groups[0].id).toBe(SEED_PERSONAL_GROUP.id);
       expect(state.groups[0].isPersonal).toBe(true);
-      expect(state.tasks).toEqual([]);
-      expect(state.tags).toEqual([]);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.groups[0].creatorId).toBe('user-1');
+      expect(state.groups[0].id).not.toBe(SEED_PERSONAL_GROUP.id);
+
+      const created = await useGroupsStore.getState().createGroup('Proyecto Auth');
+      expect(created.creatorId).toBe('user-1');
+
+      // Mid-session expiration aborts mutation cleanly
+      configureGroupsStore({ getActiveUserId: () => Promise.resolve(null) });
+      await expect(useGroupsStore.getState().createGroup('No Debe Guardarse')).rejects.toThrow();
     });
 
     it('should load all existing groups, tasks, and tags from storage', async () => {

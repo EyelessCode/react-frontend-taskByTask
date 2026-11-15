@@ -37,6 +37,7 @@ describe('Group Full Lifecycle Integration (integration/features/groups/group-li
       groupRepository,
       taskRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetGroupsStore();
 
@@ -44,6 +45,7 @@ describe('Group Full Lifecycle Integration (integration/features/groups/group-li
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
   });

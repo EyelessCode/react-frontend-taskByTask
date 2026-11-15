@@ -16,6 +16,7 @@ import {
   BusinessRuleViolationError,
 } from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
+import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
 import { useTasksStore } from '../../tasks/store/tasks-store';
 
 export type GroupModalType = 'create' | 'rename' | 'delete' | null;
@@ -57,16 +58,24 @@ export interface GroupsStoreDependencies {
   groupRepository: GroupRepository;
   taskRepository: TaskRepository;
   tagRepository: TagRepository;
+  getActiveUserId: () => Promise<string | null>;
 }
 
 let deps: GroupsStoreDependencies = {
   groupRepository: new LocalStorageGroupRepository(),
   taskRepository: new LocalStorageTaskRepository(),
   tagRepository: new LocalStorageTagRepository(),
+  getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
 };
 
 export function configureGroupsStore(newDeps: Partial<GroupsStoreDependencies>): void {
   deps = { ...deps, ...newDeps };
+}
+
+function isGroupAccessibleToUser(group: Group, userId: string): boolean {
+  return (
+    group.creatorId === userId || group.members.some((member) => member.userId === userId)
+  );
 }
 
 const initialState: GroupsState = {
@@ -90,9 +99,24 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
   init: async () => {
     set({ isLoading: true, error: null });
     try {
-      await deps.groupRepository.ensureSeedGroup();
-      const [allGroups, allTasks, allTags] = await Promise.all([
-        deps.groupRepository.getAll(),
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        set({
+          groups: [],
+          tasks: [],
+          tags: [],
+          selectedGroupIds: [],
+          isLoading: false,
+        });
+        await useTasksStore.getState().init();
+        return;
+      }
+
+      await deps.groupRepository.ensurePersonalGroupForUser(activeUserId);
+      const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
+      const accessibleGroupIds = new Set(accessibleGroups.map((g) => g.id));
+
+      const [allTasks, allTags] = await Promise.all([
         deps.taskRepository.getAll(),
         deps.tagRepository.getAll(),
       ]);
@@ -100,9 +124,9 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
       await useTasksStore.getState().init();
 
       set({
-        groups: allGroups,
-        tasks: allTasks,
-        tags: allTags,
+        groups: accessibleGroups,
+        tasks: allTasks.filter((t) => accessibleGroupIds.has(t.groupId)),
+        tags: allTags.filter((t) => accessibleGroupIds.has(t.groupId)),
         isLoading: false,
       });
     } catch (err) {
@@ -113,24 +137,31 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
   createGroup: async (name: string) => {
     set({ isLoading: true, error: null });
     try {
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        resetGroupsStore();
+        throw new BusinessRuleViolationError(es.auth.sessionExpired);
+      }
+
       const trimmed = name.trim();
+      const nowIso = new Date().toISOString();
       const newGroup: Group = {
         id:
           typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
             ? crypto.randomUUID()
             : `group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         name: trimmed,
-        creatorId: 'local-user',
+        creatorId: activeUserId,
         isPersonal: false,
         type: 'individual',
         members: [
           {
-            userId: 'local-user',
+            userId: activeUserId,
             role: 'creator',
-            joinedAt: new Date().toISOString(),
+            joinedAt: nowIso,
           },
         ],
-        createdAt: new Date().toISOString(),
+        createdAt: nowIso,
       };
 
       await deps.groupRepository.save(newGroup);
@@ -154,8 +185,14 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
   renameGroup: async (groupId: string, newName: string) => {
     set({ isLoading: true, error: null });
     try {
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        resetGroupsStore();
+        throw new BusinessRuleViolationError(es.auth.sessionExpired);
+      }
+
       const group = await deps.groupRepository.getById(groupId);
-      if (!group) {
+      if (!group || !isGroupAccessibleToUser(group, activeUserId)) {
         throw new NotFoundError(es.errors.notFound('Grupo'));
       }
 
@@ -185,8 +222,14 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
   deleteGroup: async (groupId: string) => {
     set({ isLoading: true, error: null });
     try {
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        resetGroupsStore();
+        throw new BusinessRuleViolationError(es.auth.sessionExpired);
+      }
+
       const group = await deps.groupRepository.getById(groupId);
-      if (!group) {
+      if (!group || !isGroupAccessibleToUser(group, activeUserId)) {
         throw new NotFoundError(es.errors.notFound('Grupo'));
       }
       if (group.isPersonal) {
@@ -218,8 +261,24 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
   refresh: async () => {
     set({ isLoading: true, error: null });
     try {
-      const [allGroups, allTasks, allTags] = await Promise.all([
-        deps.groupRepository.getAll(),
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        set({
+          groups: [],
+          tasks: [],
+          tags: [],
+          selectedGroupIds: [],
+          isLoading: false,
+        });
+        await useTasksStore.getState().init();
+        return;
+      }
+
+      await deps.groupRepository.ensurePersonalGroupForUser(activeUserId);
+      const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
+      const accessibleGroupIds = new Set(accessibleGroups.map((g) => g.id));
+
+      const [allTasks, allTags] = await Promise.all([
         deps.taskRepository.getAll(),
         deps.tagRepository.getAll(),
       ]);
@@ -227,9 +286,9 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
       await useTasksStore.getState().init();
 
       set({
-        groups: allGroups,
-        tasks: allTasks,
-        tags: allTags,
+        groups: accessibleGroups,
+        tasks: allTasks.filter((t) => accessibleGroupIds.has(t.groupId)),
+        tags: allTags.filter((t) => accessibleGroupIds.has(t.groupId)),
         isLoading: false,
       });
     } catch (err) {
@@ -272,3 +331,7 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
 export function resetGroupsStore(): void {
   useGroupsStore.setState(initialState);
 }
+
+subscribeAuthSessionEnd(() => {
+  resetGroupsStore();
+});

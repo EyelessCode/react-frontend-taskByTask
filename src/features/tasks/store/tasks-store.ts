@@ -12,7 +12,9 @@ import {
   LocalStorageGroupRepository,
   LocalStorageTagRepository,
 } from '../../../data/repositories';
-import { NotFoundError } from '../../../shared/errors';
+import { BusinessRuleViolationError, NotFoundError } from '../../../shared/errors';
+import { es } from '../../../shared/i18n';
+import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
 
 export type ModalType =
   | 'create'
@@ -68,12 +70,14 @@ export interface TasksStoreDependencies {
   taskRepository: TaskRepository;
   groupRepository: GroupRepository;
   tagRepository: TagRepository;
+  getActiveUserId: () => Promise<string | null>;
 }
 
 let deps: TasksStoreDependencies = {
   taskRepository: new LocalStorageTaskRepository(),
   groupRepository: new LocalStorageGroupRepository(),
   tagRepository: new LocalStorageTagRepository(),
+  getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
 };
 
 export function configureTasksStore(newDeps: Partial<TasksStoreDependencies>): void {
@@ -85,7 +89,7 @@ const initialState: TasksState = {
   groups: [],
   tags: [],
   allTags: [],
-  activeGroupId: 'group-personal',
+  activeGroupId: '',
   activeFilter: 'pendientes',
   isLoading: false,
   error: null,
@@ -108,34 +112,57 @@ async function ensureDeduplicatedTagIds(groupId: string, tagNames: string[]): Pr
   return tagIds;
 }
 
+async function requireActiveUserId(): Promise<string> {
+  const activeUserId = await deps.getActiveUserId();
+  if (!activeUserId) {
+    resetTasksStore();
+    throw new BusinessRuleViolationError(es.auth.sessionExpired);
+  }
+  return activeUserId;
+}
+
 export const useTasksStore = create<TasksStore>()((set, get) => ({
   ...initialState,
 
   init: async () => {
     set({ isLoading: true, error: null });
     try {
-      await deps.groupRepository.ensureSeedGroup();
-      const allGroups = await deps.groupRepository.getAll();
-      const personalGroup = allGroups.find(
-        (g) => g.isPersonal || g.id === 'group-personal',
-      );
-      const currentActive = get().activeGroupId;
-      const resolvedActive = allGroups.some((g) => g.id === currentActive)
-        ? currentActive
-        : personalGroup?.id ?? allGroups[0]?.id ?? 'group-personal';
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        set({
+          groups: [],
+          activeGroupId: '',
+          tasks: [],
+          tags: [],
+          allTags: [],
+          isLoading: false,
+        });
+        return;
+      }
 
-      const [groupTasks, groupTags, allTags] = await Promise.all([
-        deps.taskRepository.getByGroupId(resolvedActive),
-        deps.tagRepository.getByGroupId(resolvedActive),
-        deps.tagRepository.getAll(),
-      ]);
+      await deps.groupRepository.ensurePersonalGroupForUser(activeUserId);
+      const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
+      const accessibleGroupIds = new Set(accessibleGroups.map((g) => g.id));
+      const personalGroup = accessibleGroups.find((g) => g.isPersonal);
+      const currentActive = get().activeGroupId;
+      const resolvedActive = accessibleGroups.some((g) => g.id === currentActive)
+        ? currentActive
+        : personalGroup?.id ?? accessibleGroups[0]?.id ?? '';
+
+      const [groupTasks, groupTags, allTags] = resolvedActive
+        ? await Promise.all([
+            deps.taskRepository.getByGroupId(resolvedActive),
+            deps.tagRepository.getByGroupId(resolvedActive),
+            deps.tagRepository.getAll(),
+          ])
+        : [[], [], []];
 
       set({
-        groups: allGroups,
+        groups: accessibleGroups,
         activeGroupId: resolvedActive,
         tasks: groupTasks,
         tags: groupTags,
-        allTags,
+        allTags: allTags.filter((t) => accessibleGroupIds.has(t.groupId)),
         isLoading: false,
       });
     } catch (err) {
@@ -146,6 +173,15 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   setActiveGroup: async (groupId: string) => {
     set({ isLoading: true, error: null, activeGroupId: groupId });
     try {
+      const activeUserId = await deps.getActiveUserId();
+      if (!activeUserId) {
+        resetTasksStore();
+        return;
+      }
+
+      const accessibleGroups = await deps.groupRepository.getAccessibleByUserId(activeUserId);
+      const accessibleGroupIds = new Set(accessibleGroups.map((g) => g.id));
+
       const [groupTasks, groupTags, allTags] = await Promise.all([
         deps.taskRepository.getByGroupId(groupId),
         deps.tagRepository.getByGroupId(groupId),
@@ -154,7 +190,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
       set({
         tasks: groupTasks,
         tags: groupTags,
-        allTags,
+        allTags: allTags.filter((t) => accessibleGroupIds.has(t.groupId)),
         isLoading: false,
       });
     } catch (err) {
@@ -189,6 +225,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   createTask: async (payload: TaskFormInput) => {
+    await requireActiveUserId();
     const targetGroupId = payload.groupId || get().activeGroupId;
     const tagIds =
       payload.tagNames && payload.tagNames.length > 0
@@ -234,6 +271,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   updateTask: async (taskId: string, payload: Partial<TaskFormInput>) => {
+    await requireActiveUserId();
     const existing = await deps.taskRepository.getById(taskId);
     if (!existing) {
       throw new NotFoundError('Tarea', taskId);
@@ -276,6 +314,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   deleteTask: async (taskId: string) => {
+    await requireActiveUserId();
     await deps.taskRepository.delete(taskId);
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== taskId),
@@ -283,6 +322,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   toggleTaskComplete: async (taskId: string) => {
+    await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -302,6 +342,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   moveTask: async (taskId: string, targetGroupId: string) => {
+    await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -345,6 +386,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   copyTask: async (taskId: string, targetGroupId: string) => {
+    await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -394,6 +436,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   removeTagFromTask: async (taskId: string, tagId: string) => {
+    await requireActiveUserId();
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -412,6 +455,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
   },
 
   deleteTagFromGroup: async (tagId: string) => {
+    await requireActiveUserId();
     await deps.tagRepository.deleteFromGroup(tagId);
 
     const allTasks = await deps.taskRepository.getAll();
@@ -439,3 +483,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 export function resetTasksStore(): void {
   useTasksStore.setState(initialState);
 }
+
+subscribeAuthSessionEnd(() => {
+  resetTasksStore();
+});

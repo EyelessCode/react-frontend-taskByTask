@@ -92,12 +92,14 @@ describe('TaskMoveCopyModal & TaskDeleteConfirmModal (integration/features/tasks
     groupRepository = new LocalStorageGroupRepository(adapter);
     tagRepository = new LocalStorageTagRepository(adapter);
 
+    await groupRepository.ensureSeedGroup();
     await taskRepository.save(sampleTask);
 
     configureTasksStore({
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
   });

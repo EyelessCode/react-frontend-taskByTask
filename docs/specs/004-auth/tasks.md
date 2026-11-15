@@ -66,7 +66,7 @@
   - **Done when:** All `auth-store.test.ts` unit tests pass deterministically.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Per-User Workspace Store Isolation & Missing-Personal Self-Healing (`RF-06`, `RNF-18`, `RNF-20`)**
+- [x] **T6: Per-User Workspace Store Isolation & Missing-Personal Self-Healing (`RF-06`, `RNF-18`, `RNF-20`)**
   - **Associated Requirements:** `REQ-AU-09`, `REQ-AU-21`, Section 2.3
   - **Files Touched:**
     - `tests/unit/features/groups/{groups-store.test.ts,groups-hooks.test.tsx}` (modified — test unauthenticated empty state, user-scoped hydration, missing Personal self-healing, `createGroup` sets `creatorId: activeUserId`, mid-session expiration abort)

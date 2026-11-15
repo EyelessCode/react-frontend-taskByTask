@@ -38,7 +38,7 @@ describe('Tasks Custom Hooks (unit/features/tasks/tasks-hooks)', () => {
     createdAt: '2026-11-01T10:00:00.000Z',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockStorage = new MockStorage();
     adapter = new LocalStorageAdapter(mockStorage);
     taskRepository = new LocalStorageTaskRepository(adapter);
@@ -49,8 +49,10 @@ describe('Tasks Custom Hooks (unit/features/tasks/tasks-hooks)', () => {
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
+    await groupRepository.ensureSeedGroup();
   });
 
   describe('useTasks', () => {

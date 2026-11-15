@@ -50,6 +50,7 @@ describe('TasksView Application Integration (integration/features/tasks)', () =>
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
   });

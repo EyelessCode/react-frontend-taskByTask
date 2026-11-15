@@ -47,8 +47,10 @@ describe('TaskFormModal, TaskTagInput, TaskTagRemovalModal (integration/features
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
+    await groupRepository.ensureSeedGroup();
     await useTasksStore.getState().init();
   });
 

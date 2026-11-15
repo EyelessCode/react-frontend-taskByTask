@@ -36,7 +36,7 @@ describe('useTasksStore (unit/features/tasks/tasks-store)', () => {
     createdAt: '2026-11-01T10:00:00.000Z',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockStorage = new MockStorage();
     adapter = new LocalStorageAdapter(mockStorage);
     taskRepository = new LocalStorageTaskRepository(adapter);
@@ -47,20 +47,36 @@ describe('useTasksStore (unit/features/tasks/tasks-store)', () => {
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
+    await groupRepository.ensureSeedGroup();
   });
 
-  it('should initialize store with SEED_PERSONAL_GROUP when storage is empty', async () => {
+  it('should return empty state when unauthenticated and self-heal Personal group when authenticated', async () => {
+    mockStorage.clear();
+    configureTasksStore({ getActiveUserId: () => Promise.resolve(null) });
+    await useTasksStore.getState().init();
+    expect(useTasksStore.getState().groups).toEqual([]);
+    expect(useTasksStore.getState().activeGroupId).toBe('');
+
+    // Legacy local-user group must not be exposed to user-1
+    await groupRepository.ensureSeedGroup();
+    configureTasksStore({ getActiveUserId: () => Promise.resolve('user-1') });
     await useTasksStore.getState().init();
 
     const state = useTasksStore.getState();
     expect(state.groups).toHaveLength(1);
-    expect(state.groups[0].id).toBe(SEED_PERSONAL_GROUP.id);
-    expect(state.activeGroupId).toBe(SEED_PERSONAL_GROUP.id);
-    expect(state.tasks).toEqual([]);
-    expect(state.tags).toEqual([]);
-    expect(state.isLoading).toBe(false);
+    expect(state.groups[0].creatorId).toBe('user-1');
+    expect(state.groups[0].id).not.toBe(SEED_PERSONAL_GROUP.id);
+    expect(state.activeGroupId).toBe(state.groups[0].id);
+
+    // Mid-session expiration aborts createTask cleanly
+    configureTasksStore({ getActiveUserId: () => Promise.resolve(null) });
+    await expect(
+      useTasksStore.getState().createTask({ title: 'No guardar', groupId: state.activeGroupId }),
+    ).rejects.toThrow();
+    expect(await taskRepository.getAll()).toEqual([]);
   });
 
   it('should create task with auto id, createdAt, completed false, and synchronize tags', async () => {

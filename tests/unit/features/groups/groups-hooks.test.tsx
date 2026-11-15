@@ -52,6 +52,7 @@ describe('Groups Custom Hooks (unit/features/groups/groups-hooks)', () => {
       groupRepository,
       taskRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetGroupsStore();
 
@@ -59,6 +60,7 @@ describe('Groups Custom Hooks (unit/features/groups/groups-hooks)', () => {
       taskRepository,
       groupRepository,
       tagRepository,
+      getActiveUserId: () => Promise.resolve('local-user'),
     });
     resetTasksStore();
   });
