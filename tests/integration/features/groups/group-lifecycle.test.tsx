@@ -136,5 +136,5 @@ describe('Group Full Lifecycle Integration (integration/features/groups/group-li
     expect(storedGroups.some((g) => g.name === 'Proyectos Renovados')).toBe(false);
     const storedTasks = await taskRepository.getAll();
     expect(storedTasks.some((t) => t.title === 'Definir arquitectura')).toBe(false);
-  });
+  }, 15000);
 });

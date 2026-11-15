@@ -99,7 +99,7 @@
   - **Done when:** All unit and integration tests across `tasks`, `groups`, and `tags` pass with zero errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Complete Verification Gates, Playwright E2E Suite (`tags.spec.ts`), and Spec/Memory Finalization**
+- [x] **T6: Complete Verification Gates, Playwright E2E Suite (`tags.spec.ts`), and Spec/Memory Finalization**
   - **Associated Requirements:** `AC-TG-01` through `AC-TG-12`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
   - **Files Touched:**
     - `tests/e2e/tags.spec.ts` (created)

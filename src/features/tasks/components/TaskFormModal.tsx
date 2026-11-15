@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
+import { useWatch } from 'react-hook-form';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
@@ -44,8 +45,8 @@ export function TaskFormModal({
     },
   });
 
-  const watchedDueDate = form.watch('dueDate');
-  const watchedTagNames = form.watch('tagNames') ?? [];
+  const watchedDueDate = useWatch({ control: form.control, name: 'dueDate' });
+  const watchedTagNames = useWatch({ control: form.control, name: 'tagNames' }) ?? [];
   const isTimeDisabled = !watchedDueDate || watchedDueDate.trim().length === 0;
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {

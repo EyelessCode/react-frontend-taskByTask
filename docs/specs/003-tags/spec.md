@@ -1,7 +1,7 @@
 # Spec 003: Task Tags & Group-Scoped Tag Management
 
 - **Feature Name:** `003-tags`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-15
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-22`, `RF-12`, `RF-13`, `RF-16`, `RF-07`, `UI-01`, `UI-06`, `RNF-01`, `RNF-04`, `RNF-07`, `RNF-12`, `RNF-14`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix A`, `Appendix B`, `Constitution Principles 1–6`
