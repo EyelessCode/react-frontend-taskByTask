@@ -4,6 +4,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import Form from 'react-bootstrap/Form';
 import type { Task, Tag } from '../../../shared/schemas';
 import { es } from '../../../shared/i18n';
+import { resolveTaskTags } from '../../tags/utils';
 import {
   formatDisplayDate,
   formatDisplayTime,
@@ -18,6 +19,7 @@ export interface TaskCardProps {
   onMove?: (task: Task) => void;
   onCopy?: (task: Task) => void;
   onDelete?: (task: Task) => void;
+  onRemoveTag?: (task: Task, tag: Tag) => void;
   timeFormat?: '24h' | '12h';
   now?: Date;
   timeZone?: string;
@@ -31,6 +33,7 @@ export function TaskCard({
   onMove,
   onCopy,
   onDelete,
+  onRemoveTag,
   timeFormat = '24h',
   now,
   timeZone,
@@ -43,10 +46,8 @@ export function TaskCard({
     timeZone,
   });
 
-  // Resolve tags by tagIds
-  const resolvedTags = (task.tagIds ?? [])
-    .map((id) => tags.find((t) => t.id === id))
-    .filter((t): t is Tag => Boolean(t));
+  // Resolve tags by tagIds scoped to task's group
+  const resolvedTags = resolveTaskTags(task.tagIds, tags, task.groupId);
 
   const visibleTags = resolvedTags.slice(0, 5);
   const overflowCount = resolvedTags.length - 5;
@@ -104,18 +105,30 @@ export function TaskCard({
 
               {/* Tag Chips */}
               {resolvedTags.length > 0 && (
-                <div className="d-flex flex-wrap gap-1 mt-1">
+                <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
                   {visibleTags.map((tag) => (
                     <Badge
                       key={tag.id}
                       bg="secondary"
-                      className="fw-normal text-white"
+                      className="d-inline-flex align-items-center gap-1 py-1 px-2 fw-normal text-white"
                     >
-                      {tag.name}
+                      <span>{tag.name}</span>
+                      <button
+                        type="button"
+                        className="btn-close btn-close-white p-0 ms-1"
+                        style={{ width: '0.5rem', height: '0.5rem' }}
+                        aria-label={es.tasks.removeTagAria(tag.name)}
+                        onClick={() => onRemoveTag?.(task, tag)}
+                      />
                     </Badge>
                   ))}
                   {overflowCount > 0 && (
-                    <Badge bg="light" text="dark" className="border fw-normal">
+                    <Badge
+                      bg="light"
+                      text="dark"
+                      className="border fw-normal"
+                      aria-label={es.tasks.tagOverflowAria(overflowCount)}
+                    >
                       {es.tasks.tagOverflow(overflowCount)}
                     </Badge>
                   )}

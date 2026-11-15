@@ -49,6 +49,7 @@ export function GroupsGridView() {
   const {
     activeGroupId,
     modalState: taskModalState,
+    init: tasksInit,
     setActiveGroup: tasksSetActiveGroup,
     openModal: tasksOpenModal,
     closeModal: tasksCloseModal,
@@ -60,8 +61,9 @@ export function GroupsGridView() {
   const [inlineGroupId, setInlineGroupId] = useState<string | null>(null);
 
   useEffect(() => {
-    init();
-  }, [init]);
+    void init();
+    void tasksInit();
+  }, [init, tasksInit]);
 
   const activeGroup =
     groups.find((g) => g.id === activeGroupId) ?? groups[0] ?? null;
@@ -176,6 +178,12 @@ export function GroupsGridView() {
                 onMoveTask={(task) => tasksOpenModal('move', task.id)}
                 onCopyTask={(task) => tasksOpenModal('copy', task.id)}
                 onDeleteTask={(task) => tasksOpenModal('delete', task.id)}
+                onRemoveTag={(task, tag) =>
+                  tasksOpenModal('tagRemoval', task.id, {
+                    tagId: tag.id,
+                    tagName: tag.name,
+                  })
+                }
               />
             </Col>
           ))}
@@ -215,6 +223,7 @@ export function GroupsGridView() {
           tasksCloseModal();
         }}
         onSuccess={refresh}
+        onTagMutated={refresh}
       />
 
       <TaskMoveCopyModal

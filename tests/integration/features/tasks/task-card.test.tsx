@@ -243,6 +243,32 @@ describe('TaskCard, TaskList, TaskFilterTabs (integration/features/tasks)', () =
       await user.click(deleteItem);
       expect(onDelete).toHaveBeenCalledWith(baseTask);
     });
+
+    it('should render per-chip remove button triggering onRemoveTag and accessible overflow badge aria-label', async () => {
+      const user = userEvent.setup();
+      const onRemoveTag = vi.fn();
+      const manyTagsTask: Task = {
+        ...baseTask,
+        tagIds: ['tag-1', 'tag-2', 'tag-3', 'tag-4', 'tag-5', 'tag-6', 'tag-7'],
+      };
+
+      render(
+        <TaskCard
+          task={manyTagsTask}
+          tags={sampleTags}
+          onRemoveTag={onRemoveTag}
+        />,
+      );
+
+      const overflowBadge = screen.getByText('+2 más');
+      expect(overflowBadge).toHaveAttribute('aria-label', es.tasks.tagOverflowAria(2));
+
+      const removeFrontendBtn = screen.getByRole('button', {
+        name: es.tasks.removeTagAria('Frontend'),
+      });
+      await user.click(removeFrontendBtn);
+      expect(onRemoveTag).toHaveBeenCalledWith(manyTagsTask, sampleTags[0]);
+    });
   });
 
   describe('TaskList component', () => {

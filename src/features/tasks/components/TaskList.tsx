@@ -12,6 +12,7 @@ export interface TaskListProps {
   onMove?: (task: Task) => void;
   onCopy?: (task: Task) => void;
   onDelete?: (task: Task) => void;
+  onRemoveTag?: (task: Task, tag: Tag) => void;
   timeFormat?: '24h' | '12h';
 }
 
@@ -24,6 +25,7 @@ export function TaskList({
   onMove,
   onCopy,
   onDelete,
+  onRemoveTag,
   timeFormat = '24h',
 }: TaskListProps) {
   if (tasks.length === 0) {
@@ -53,6 +55,7 @@ export function TaskList({
           onMove={onMove}
           onCopy={onCopy}
           onDelete={onDelete}
+          onRemoveTag={onRemoveTag}
           timeFormat={timeFormat}
         />
       ))}

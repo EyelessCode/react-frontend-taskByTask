@@ -128,6 +128,9 @@ export function TasksView() {
             onMove={(task) => openModal('move', task.id)}
             onCopy={(task) => openModal('copy', task.id)}
             onDelete={(task) => openModal('delete', task.id)}
+            onRemoveTag={(task, tag) =>
+              openModal('tagRemoval', task.id, { tagId: tag.id, tagName: tag.name })
+            }
           />
         </main>
       )}

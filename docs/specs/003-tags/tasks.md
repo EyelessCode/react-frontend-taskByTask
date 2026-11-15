@@ -80,7 +80,7 @@
   - **Done when:** `src/features/tags/` components and hooks pass all new and existing integration tests (`task-form-modal.test.tsx` and `task-tag-input.test.tsx`).
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: End-to-End Tag Integration Across Task Cards, Task Form Modal, and Groups Grid View (`TaskCard.tsx`, `TaskList.tsx`, `TaskFormModal.tsx`, `TasksView.tsx`, `GroupCard.tsx`, `GroupsGridView.tsx`)**
+- [x] **T5: End-to-End Tag Integration Across Task Cards, Task Form Modal, and Groups Grid View (`TaskCard.tsx`, `TaskList.tsx`, `TaskFormModal.tsx`, `TasksView.tsx`, `GroupCard.tsx`, `GroupsGridView.tsx`)**
   - **Associated Requirements:** `REQ-TG-06b`, `REQ-TG-12b`, `REQ-TG-14`, `REQ-TG-16`, `REQ-TG-17`, `REQ-TG-18`, `REQ-TG-19`, `REQ-TG-20`, `REQ-TG-21`, `REQ-TG-22`, `REQ-TG-23`, `REQ-TG-26`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `AC-TG-05`, `AC-TG-07`..`AC-TG-12`
   - **Files Touched:**
     - `tests/integration/features/tasks/task-card.test.tsx` (modified - verify per-chip remove button trigger and non-interactive `"+N más"` badge `aria-label`)

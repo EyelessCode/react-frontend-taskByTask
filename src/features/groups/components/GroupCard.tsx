@@ -17,6 +17,7 @@ export interface GroupCardProps {
   onMoveTask?: (task: Task) => void;
   onCopyTask?: (task: Task) => void;
   onDeleteTask?: (task: Task) => void;
+  onRemoveTag?: (task: Task, tag: Tag) => void;
   timeFormat?: '24h' | '12h';
   now?: Date;
   timeZone?: string;
@@ -34,6 +35,7 @@ export function GroupCard({
   onMoveTask,
   onCopyTask,
   onDeleteTask,
+  onRemoveTag,
   timeFormat = '24h',
   now,
   timeZone,
@@ -100,6 +102,7 @@ export function GroupCard({
                 onMove={onMoveTask}
                 onCopy={onCopyTask}
                 onDelete={onDeleteTask}
+                onRemoveTag={onRemoveTag}
                 timeFormat={timeFormat}
                 now={now}
                 timeZone={timeZone}
