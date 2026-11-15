@@ -125,6 +125,20 @@ describe('LocalStorageGroupRepository (unit/data/local-storage-group-repository)
     );
   });
 
+  it('should throw BusinessRuleViolationError if group has isPersonal true regardless of custom name or ID', async () => {
+    const customPersonal: Group = {
+      ...sampleGroup,
+      id: 'custom-personal-id',
+      name: 'Mi Espacio Personal',
+      isPersonal: true,
+    };
+    await repository.save(customPersonal);
+
+    await expect(repository.delete('custom-personal-id')).rejects.toThrowError(
+      BusinessRuleViolationError,
+    );
+  });
+
   it('should throw NotFoundError when attempting to delete a non-existent group', async () => {
     await expect(repository.delete('does-not-exist')).rejects.toThrowError(NotFoundError);
   });

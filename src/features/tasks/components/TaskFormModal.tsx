@@ -11,6 +11,7 @@ import { es } from '../../../shared/i18n';
 export interface TaskFormModalProps {
   show: boolean;
   task?: Task | null;
+  defaultGroupId?: string;
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -18,11 +19,13 @@ export interface TaskFormModalProps {
 export function TaskFormModal({
   show,
   task,
+  defaultGroupId,
   onClose,
   onSuccess,
 }: TaskFormModalProps) {
   const { form, isEdit, onSubmit, groupTags } = useTaskForm({
     task,
+    defaultGroupId,
     onSuccess: () => {
       onSuccess?.();
       onClose();

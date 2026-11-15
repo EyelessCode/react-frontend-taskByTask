@@ -151,4 +151,31 @@ describe('LocalStorageTagRepository (unit/data/local-storage-tag-repository)', (
       NotFoundError,
     );
   });
+
+  it('should delete all tags belonging to a specific groupId and preserve other groups', async () => {
+    const tagGroupA1: Tag = { id: 'tag-a1', name: 'Tag A1', groupId: 'group-a' };
+    const tagGroupA2: Tag = { id: 'tag-a2', name: 'Tag A2', groupId: 'group-a' };
+    const tagGroupB1: Tag = { id: 'tag-b1', name: 'Tag B1', groupId: 'group-b' };
+
+    await repository.save(tagGroupA1);
+    await repository.save(tagGroupA2);
+    await repository.save(tagGroupB1);
+
+    await repository.deleteByGroupId('group-a');
+
+    const remaining = await repository.getAll();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe('tag-b1');
+    expect(remaining[0].groupId).toBe('group-b');
+  });
+
+  it('should be idempotent and succeed when deleteByGroupId is called for group with 0 tags', async () => {
+    await repository.save(sampleTag);
+
+    await expect(repository.deleteByGroupId('non-existent-group')).resolves.toBeUndefined();
+
+    const all = await repository.getAll();
+    expect(all).toHaveLength(1);
+    expect(all[0].id).toBe(sampleTag.id);
+  });
 });

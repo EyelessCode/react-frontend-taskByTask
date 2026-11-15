@@ -6,4 +6,5 @@ export interface TagRepository extends Repository<Tag> {
   findByName(groupId: string, name: string): Promise<Tag | null>;
   ensureTag(groupId: string, name: string): Promise<Tag>;
   deleteFromGroup(tagId: string): Promise<void>;
+  deleteByGroupId(groupId: string): Promise<void>;
 }

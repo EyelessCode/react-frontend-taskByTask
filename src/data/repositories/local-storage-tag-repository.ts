@@ -111,4 +111,10 @@ export class LocalStorageTagRepository implements TagRepository {
   async deleteFromGroup(tagId: string): Promise<void> {
     return this.delete(tagId);
   }
+
+  async deleteByGroupId(groupId: string): Promise<void> {
+    const tags = await this.getAll();
+    const updatedTags = tags.filter((t) => t.groupId !== groupId);
+    this.storageAdapter.setItem(STORAGE_KEYS.TAGS, z.array(tagSchema), updatedTags);
+  }
 }

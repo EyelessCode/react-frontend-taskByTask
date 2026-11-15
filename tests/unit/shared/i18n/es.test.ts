@@ -11,6 +11,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
     expect(dict.errors).toBeDefined();
     expect(dict.dateTime).toBeDefined();
     expect(dict.tasks).toBeDefined();
+    expect(dict.groups).toBeDefined();
   });
 
   describe('app namespace', () => {
@@ -150,6 +151,49 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.tasks.removeTagPrompt('trabajo')).toBe(
         '¿Cómo deseas quitar la etiqueta "trabajo"?',
       );
+    });
+  });
+
+  describe('groups namespace', () => {
+    it('should contain all required groups localization keys in Spanish', () => {
+      expect(es.groups).toBeDefined();
+      expect(es.groups.gridTitle).toBe('Mis Grupos');
+      expect(es.groups.createGroupButton).toBe('Nuevo grupo');
+      expect(es.groups.searchPlaceholder).toBe('Buscar tareas por título...');
+      expect(es.groups.filterGroupLabel).toBe('Filtrar por grupo');
+      expect(es.groups.allGroupsOption).toBe('Todos los grupos');
+      expect(es.groups.refreshButton).toBe('Refrescar');
+      expect(es.groups.refreshTooltip).toBe('Actualizar grupos y tareas');
+      expect(es.groups.addTaskToGroup).toBe('Nueva tarea');
+      expect(es.groups.personalBadge).toBe('Personal');
+      expect(es.groups.groupMenuAria).toBe('Opciones del grupo');
+      expect(es.groups.actionRename).toBe('Renombrar');
+      expect(es.groups.actionDelete).toBe('Eliminar');
+      expect(es.groups.createModalTitle).toBe('Crear nuevo grupo');
+      expect(es.groups.renameModalTitle).toBe('Renombrar grupo');
+      expect(es.groups.nameLabel).toBe('Nombre del grupo');
+      expect(es.groups.namePlaceholder).toBe('Ej. Universidad, Proyecto, Trabajo');
+      expect(es.groups.deleteModalTitle).toBe('Eliminar grupo');
+      expect(es.groups.cannotDeletePersonal).toBe('El grupo Personal no se puede eliminar.');
+      expect(es.groups.emptyGroupTasks).toBe(
+        'No hay tareas que coincidan con los filtros en este grupo.',
+      );
+      expect(es.groups.emptySearchGlobal).toBe(
+        'No se encontraron tareas con el título especificado.',
+      );
+      expect(es.groups.noGroupsFound).toBe('No se encontraron grupos.');
+    });
+
+    it('should format delete modal warning with group name', () => {
+      expect(es.groups.deleteModalWarning('Trabajo')).toBe(
+        '¿Estás seguro de que deseas eliminar el grupo "Trabajo"? Todas sus tareas y etiquetas se eliminarán de forma permanente. Esta acción no se puede deshacer.',
+      );
+    });
+
+    it('should format taskCount function with singular and plural count', () => {
+      expect(es.groups.taskCount(0)).toBe('0 tareas');
+      expect(es.groups.taskCount(1)).toBe('1 tarea');
+      expect(es.groups.taskCount(5)).toBe('5 tareas');
     });
   });
 });

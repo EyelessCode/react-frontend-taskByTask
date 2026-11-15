@@ -108,4 +108,31 @@ describe('LocalStorageTaskRepository (unit/data/local-storage-task-repository)',
   it('should throw NotFoundError when attempting to delete a non-existent task', async () => {
     await expect(repository.delete('does-not-exist')).rejects.toThrowError(NotFoundError);
   });
+
+  it('should delete all tasks belonging to a specific groupId and preserve other groups', async () => {
+    const taskGroupA1 = { ...sampleTask, id: 't-a1', groupId: 'group-a' };
+    const taskGroupA2 = { ...sampleTask, id: 't-a2', groupId: 'group-a' };
+    const taskGroupB1 = { ...sampleTask, id: 't-b1', groupId: 'group-b' };
+
+    await repository.save(taskGroupA1);
+    await repository.save(taskGroupA2);
+    await repository.save(taskGroupB1);
+
+    await repository.deleteByGroupId('group-a');
+
+    const remaining = await repository.getAll();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe('t-b1');
+    expect(remaining[0].groupId).toBe('group-b');
+  });
+
+  it('should be idempotent and succeed when deleteByGroupId is called for group with 0 tasks', async () => {
+    await repository.save(sampleTask);
+
+    await expect(repository.deleteByGroupId('non-existent-group')).resolves.toBeUndefined();
+
+    const all = await repository.getAll();
+    expect(all).toHaveLength(1);
+    expect(all[0].id).toBe(sampleTask.id);
+  });
 });

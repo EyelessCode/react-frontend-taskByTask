@@ -1,7 +1,7 @@
 # Spec 002: Groups Management & Groups Grid View
 
 - **Feature Name:** `002-groups`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-05
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-06`, `RF-07`, `RF-24`, `RF-25`, `UI-01`, `UI-02`, `UI-05`, `UI-06`, `RNF-01`, `RNF-04`, `RNF-07`, `RNF-12`, `RNF-14`, `RNF-16`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix A`, `Appendix B`, `Appendix C`, `Constitution Principles 1–6`

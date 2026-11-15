@@ -35,6 +35,38 @@ export interface LocalizationDictionary {
     dateFormat: 'dd/mm/aaaa';
   };
   tasks: TasksLocalization;
+  groups: GroupsLocalization;
+}
+
+export interface GroupsLocalization {
+  // Navigation & Toolbar
+  gridTitle: string;
+  createGroupButton: string;
+  searchPlaceholder: string;
+  filterGroupLabel: string;
+  allGroupsOption: string;
+  refreshButton: string;
+  refreshTooltip: string;
+  addTaskToGroup: string;
+
+  // Group Card & Modals
+  personalBadge: string;
+  groupMenuAria: string;
+  actionRename: string;
+  actionDelete: string;
+  createModalTitle: string;
+  renameModalTitle: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  deleteModalTitle: string;
+  deleteModalWarning: (groupName: string) => string;
+  cannotDeletePersonal: string;
+
+  // Empty & Feedback States
+  emptyGroupTasks: string;
+  emptySearchGlobal: string;
+  noGroupsFound: string;
+  taskCount: (count: number) => string;
 }
 
 export interface TasksLocalization {
@@ -155,5 +187,31 @@ export const es = {
     emptyPending: 'No hay tareas pendientes en este grupo',
     emptyCompleted: 'No hay tareas completadas en este grupo',
     emptyAll: 'No hay tareas en este grupo',
+  },
+  groups: {
+    gridTitle: 'Mis Grupos',
+    createGroupButton: 'Nuevo grupo',
+    searchPlaceholder: 'Buscar tareas por título...',
+    filterGroupLabel: 'Filtrar por grupo',
+    allGroupsOption: 'Todos los grupos',
+    refreshButton: 'Refrescar',
+    refreshTooltip: 'Actualizar grupos y tareas',
+    addTaskToGroup: 'Nueva tarea',
+    personalBadge: 'Personal',
+    groupMenuAria: 'Opciones del grupo',
+    actionRename: 'Renombrar',
+    actionDelete: 'Eliminar',
+    createModalTitle: 'Crear nuevo grupo',
+    renameModalTitle: 'Renombrar grupo',
+    nameLabel: 'Nombre del grupo',
+    namePlaceholder: 'Ej. Universidad, Proyecto, Trabajo',
+    deleteModalTitle: 'Eliminar grupo',
+    deleteModalWarning: (groupName: string) =>
+      `¿Estás seguro de que deseas eliminar el grupo "${groupName}"? Todas sus tareas y etiquetas se eliminarán de forma permanente. Esta acción no se puede deshacer.`,
+    cannotDeletePersonal: 'El grupo Personal no se puede eliminar.',
+    emptyGroupTasks: 'No hay tareas que coincidan con los filtros en este grupo.',
+    emptySearchGlobal: 'No se encontraron tareas con el título especificado.',
+    noGroupsFound: 'No se encontraron grupos.',
+    taskCount: (count: number) => `${count} ${count === 1 ? 'tarea' : 'tareas'}`,
   },
 } as const satisfies LocalizationDictionary;

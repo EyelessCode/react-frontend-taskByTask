@@ -64,4 +64,10 @@ export class LocalStorageTaskRepository implements TaskRepository {
     const updatedTasks = tasks.filter((t) => t.id !== id);
     this.storageAdapter.setItem(STORAGE_KEYS.TASKS, z.array(taskSchema), updatedTasks);
   }
+
+  async deleteByGroupId(groupId: string): Promise<void> {
+    const tasks = await this.getAll();
+    const updatedTasks = tasks.filter((t) => t.groupId !== groupId);
+    this.storageAdapter.setItem(STORAGE_KEYS.TASKS, z.array(taskSchema), updatedTasks);
+  }
 }

@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Repository & Data Contract Extensions (`deleteByGroupId` on tasks and tags)**
+- [x] **T1: Repository & Data Contract Extensions (`deleteByGroupId` on tasks and tags)**
   - **Associated Requirements:** `REQ-GRP-10`, `REQ-GRP-11`, `REQ-GRP-11b`, `AC-GRP-04`, `AC-GRP-05`
   - **Files Touched:**
     - `tests/unit/data/local-storage-task-repository.test.ts` (modified - add unit tests for `deleteByGroupId`)
@@ -25,7 +25,7 @@
   - **Done when:** `TaskRepository` and `TagRepository` implement `deleteByGroupId`, pass all repository unit tests, and maintain 100% backward compatibility with `000-foundation` and `001-tasks`.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Spanish Localization Extension (`src/shared/i18n/es.ts`)**
+- [x] **T2: Spanish Localization Extension (`src/shared/i18n/es.ts`)**
   - **Associated Requirements:** `REQ-GRP-24`, `AC-GRP-01`, `AC-GRP-03`, `AC-GRP-04`, `AC-GRP-05`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`
   - **Files Touched:**
     - `tests/unit/shared/i18n/es.test.ts` (modified - add tests validating `es.groups` namespace)
@@ -37,7 +37,7 @@
   - **Done when:** `es.groups` compiles cleanly, satisfies `LocalizationDictionary` types, and passes unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: Pure Utilities (`group-sort.ts` & `filter-tasks.ts`)**
+- [x] **T3: Pure Utilities (`group-sort.ts` & `filter-tasks.ts`)**
   - **Associated Requirements:** `REQ-GRP-12b`, `REQ-GRP-13`, `REQ-GRP-17`, `REQ-GRP-18`, `REQ-GRP-19`, `REQ-GRP-20`, `REQ-GRP-21`, `AC-GRP-06`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`
   - **Files Touched:**
     - `tests/unit/features/groups/group-sort.test.ts` (created)
@@ -52,7 +52,7 @@
   - **Done when:** Pure utilities pass unit tests with 100% code coverage.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Group Form Validation Schema (`group-form-schema.ts`)**
+- [x] **T4: Group Form Validation Schema (`group-form-schema.ts`)**
   - **Associated Requirements:** `REQ-GRP-01`, `REQ-GRP-04`, `REQ-GRP-04b`, `REQ-GRP-07`, `AC-GRP-01`, `AC-GRP-02`, `AC-GRP-03`
   - **Files Touched:**
     - `tests/unit/features/groups/group-form-schema.test.ts` (created)
@@ -66,7 +66,7 @@
   - **Done when:** `groupFormSchema` provides type-safe `GroupFormInput` and passes unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: Zustand Groups Store (`groups-store.ts`) & Custom Hooks (`use-groups.ts`, `use-group-form.ts`)**
+- [x] **T5: Zustand Groups Store (`groups-store.ts`) & Custom Hooks (`use-groups.ts`, `use-group-form.ts`)**
   - **Associated Requirements:** `REQ-GRP-02`, `REQ-GRP-03`, `REQ-GRP-05`, `REQ-GRP-06`, `REQ-GRP-08`, `REQ-GRP-09`, `REQ-GRP-10`, `REQ-GRP-10b`, `REQ-GRP-11`, `REQ-GRP-11b`, `REQ-GRP-16`, `REQ-GRP-16b`, `AC-GRP-01`..`AC-GRP-05`, `AC-GRP-08`..`AC-GRP-12`
   - **Files Touched:**
     - `tests/unit/features/groups/groups-store.test.ts` (created)
@@ -86,7 +86,7 @@
   - **Done when:** Store and hooks manage state immutably without React Compiler regressions and pass unit tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Group Presentation Components (`GroupCard.tsx`, `GroupsFilterToolbar.tsx`, `GroupFormModal.tsx`, `GroupDeleteConfirmModal.tsx`)**
+- [x] **T6: Group Presentation Components (`GroupCard.tsx`, `GroupsFilterToolbar.tsx`, `GroupFormModal.tsx`, `GroupDeleteConfirmModal.tsx`)**
   - **Associated Requirements:** `REQ-GRP-01`, `REQ-GRP-03`, `REQ-GRP-04`, `REQ-GRP-06`, `REQ-GRP-07`, `REQ-GRP-09`, `REQ-GRP-10`, `REQ-GRP-11`, `REQ-GRP-12`, `REQ-GRP-13`, `REQ-GRP-14`, `REQ-GRP-15`, `REQ-GRP-17`, `REQ-GRP-18`, `REQ-GRP-19`, `REQ-GRP-20`, `REQ-GRP-21`, `REQ-GRP-22`, `REQ-GRP-25`, `REQ-GRP-26`, `UI-02`, `UI-06`, `RNF-12`, `AC-GRP-01`..`AC-GRP-07`, `AC-GRP-12`
   - **Files Touched:**
     - `tests/integration/features/groups/group-card.test.tsx` (created)
@@ -104,7 +104,7 @@
   - **Done when:** Components render with responsive Bootstrap styling, visible focus outlines, and pass integration tests.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: Main Groups Grid View & Application Integration (`GroupsGridView.tsx`, `src/App.tsx`, Feature Barrel)**
+- [x] **T7: Main Groups Grid View & Application Integration (`GroupsGridView.tsx`, `src/App.tsx`, Feature Barrel)**
   - **Associated Requirements:** `REQ-GRP-12`, `REQ-GRP-16`, `REQ-GRP-22`, `REQ-GRP-23`, `REQ-GRP-25`, `REQ-GRP-26`, `UI-02`, `Constitution Principles 1–6`, `AC-GRP-06`, `AC-GRP-08`, `AC-GRP-09`, `AC-GRP-10`, `AC-GRP-13`
   - **Files Touched:**
     - `tests/integration/features/groups/groups-grid-view.test.tsx` (created)
@@ -123,7 +123,7 @@
   - **Done when:** `App.tsx` mounts `GroupsGridView` as default view and all unit and integration tests pass with 0 errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Complete Verification Gates, Regression Assurance & Playwright E2E Tests**
+- [x] **T8: Complete Verification Gates, Regression Assurance & Playwright E2E Tests**
   - **Associated Requirements:** `AC-GRP-01` through `AC-GRP-13`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
   - **Files Touched:**
     - `tests/e2e/groups.spec.ts` (created)

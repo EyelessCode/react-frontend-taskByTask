@@ -3,4 +3,5 @@ import type { Repository } from './repository';
 
 export interface TaskRepository extends Repository<Task> {
   getByGroupId(groupId: string): Promise<Task[]>;
+  deleteByGroupId(groupId: string): Promise<void>;
 }

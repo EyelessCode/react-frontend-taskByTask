@@ -1,7 +1,7 @@
-import { TasksView } from './features/tasks';
+import { GroupsGridView } from './features/groups';
 
-function App() {
-  return <TasksView />;
+export function App() {
+  return <GroupsGridView />;
 }
 
 export default App;

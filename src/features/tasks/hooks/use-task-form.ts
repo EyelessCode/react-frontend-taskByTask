@@ -51,7 +51,11 @@ export function useTaskForm(options: UseTaskFormOptions = {}) {
         tagNames: currentTagNames,
         groupId: task.groupId,
       });
-    } else {
+    }
+  }, [task, form, store.tags]);
+
+  useEffect(() => {
+    if (!task) {
       form.reset({
         title: '',
         description: '',
@@ -61,7 +65,7 @@ export function useTaskForm(options: UseTaskFormOptions = {}) {
         groupId: activeGroupId,
       });
     }
-  }, [task, activeGroupId, form, store.tags]);
+  }, [task, form, activeGroupId]);
 
   const onSubmit = form.handleSubmit(async (data: TaskFormData) => {
     if (isEdit && task) {
