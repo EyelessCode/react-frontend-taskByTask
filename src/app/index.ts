@@ -1,4 +1,4 @@
 /**
  * Application root module barrel.
  */
-export {};
+export * from './router';

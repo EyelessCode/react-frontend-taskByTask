@@ -1,7 +1,10 @@
-import { GroupsGridView } from './features/groups';
+import { RouterProvider } from '@tanstack/react-router';
+import { createAppRouter } from './app/router';
+
+const appRouter = createAppRouter();
 
 export function App() {
-  return <GroupsGridView />;
+  return <RouterProvider router={appRouter} />;
 }
 
 export default App;

@@ -102,7 +102,7 @@
   - **Done when:** All auth views compile cleanly under strict TS and ESLint with zero errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T9: TanStack Router Integration, Route Guards & App Bootstrap (`RF-01`–`RF-03`, `RNF-18`)**
+- [x] **T9: TanStack Router Integration, Route Guards & App Bootstrap (`RF-01`–`RF-03`, `RNF-18`)**
   - **Associated Requirements:** `REQ-AU-04`, `REQ-AU-08`, `REQ-AU-09`, `REQ-AU-20`, Section 4.2
   - **Files Touched:**
     - `tests/integration/features/auth/auth-routes.test.tsx` (created — memory-history tests for Section 4.2 matrix, one-time codes reload/navigation exit, mid-session expiry abort + `sessionExpired`, explicit logout/orphan/deletion notices, profile `12h` propagation, multi-user isolation)
