@@ -87,4 +87,57 @@ export class LocalStorageGroupRepository implements GroupRepository {
     const updatedGroups = groups.filter((g) => g.id !== id);
     this.storageAdapter.setItem(STORAGE_KEYS.GROUPS, z.array(groupSchema), updatedGroups);
   }
+
+  async getAccessibleByUserId(userId: string): Promise<Group[]> {
+    const groups = await this.getAll();
+    return groups.filter(
+      (group) =>
+        group.creatorId === userId || group.members.some((member) => member.userId === userId),
+    );
+  }
+
+  async ensurePersonalGroupForUser(
+    userId: string,
+    nowIso: string = new Date().toISOString(),
+  ): Promise<Group> {
+    const accessible = await this.getAccessibleByUserId(userId);
+    const existingPersonal = accessible.find((group) => group.isPersonal);
+    if (existingPersonal) {
+      return existingPersonal;
+    }
+
+    const personalGroup: Group = {
+      id: globalThis.crypto.randomUUID(),
+      name: SEED_PERSONAL_GROUP.name,
+      type: 'individual',
+      isPersonal: true,
+      creatorId: userId,
+      members: [
+        {
+          userId,
+          role: 'creator',
+          joinedAt: nowIso,
+        },
+      ],
+      createdAt: nowIso,
+    };
+
+    await this.save(personalGroup);
+    return personalGroup;
+  }
+
+  async deleteAllByOwnerId(userId: string): Promise<string[]> {
+    const groups = await this.getAll();
+    const deletedIds = groups
+      .filter((group) => group.creatorId === userId)
+      .map((group) => group.id);
+
+    if (deletedIds.length === 0) {
+      return [];
+    }
+
+    const remainingGroups = groups.filter((group) => group.creatorId !== userId);
+    this.storageAdapter.setItem(STORAGE_KEYS.GROUPS, z.array(groupSchema), remainingGroups);
+    return deletedIds;
+  }
 }

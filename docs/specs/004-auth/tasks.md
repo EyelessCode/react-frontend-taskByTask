@@ -44,7 +44,7 @@
   - **Done when:** All pure security, lockout, recovery-code, and form-schema unit tests pass with deterministic injected clocks/crypto.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Data Layer Contracts & LocalStorage Repositories (`RF-01`–`RF-06`, `RNF-07`, `RNF-10`, `RNF-19`)**
+- [x] **T4: Data Layer Contracts & LocalStorage Repositories (`RF-01`–`RF-06`, `RNF-07`, `RNF-10`, `RNF-19`)**
   - **Associated Requirements:** `REQ-AU-02`, `REQ-AU-03`, `REQ-AU-06`, `REQ-AU-09`, `REQ-AU-11`, `REQ-AU-13`, `REQ-AU-15`, `REQ-AU-19`, `REQ-AU-21`
   - **Files Touched:**
     - `tests/unit/data/local-storage-auth-repositories.test.ts` (created)
