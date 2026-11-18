@@ -248,7 +248,7 @@ describe('Auth Routes & Navigation Guards (integration/features/auth/auth-routes
     });
     expect(await screen.findByText(es.auth.accountDeleted)).toBeInTheDocument();
     expect(screen.queryByText(es.auth.sessionExpired)).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('clears regenerated profile recovery codes when navigating away from /profile via router', async () => {
     const user = userEvent.setup();

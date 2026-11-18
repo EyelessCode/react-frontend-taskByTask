@@ -188,3 +188,37 @@ export function getReminderTriggerDate(params: ReminderTriggerParams): Date {
 export function getDueNotificationTriggerMs(params: ReminderTriggerParams): number {
   return getReminderTriggerDate(params).getTime();
 }
+
+export function getZonedCalendarDate(date: Date, timeZone: string): string {
+  const parts = getTzParts(date, timeZone);
+  const year = String(parts.year).padStart(4, '0');
+  const month = String(parts.month).padStart(2, '0');
+  const day = String(parts.day).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function isPastLocalNineAm(date: Date, timeZone: string): boolean {
+  const parts = getTzParts(date, timeZone);
+  return parts.hour >= 9;
+}
+
+export function formatZonedDateTime(
+  isoTimestamp: string,
+  timeZone: string,
+  timeFormat: '24h' | '12h' = '24h',
+): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) {
+    return isoTimestamp;
+  }
+  const parts = getTzParts(date, timeZone);
+  const year = String(parts.year).padStart(4, '0');
+  const month = String(parts.month).padStart(2, '0');
+  const day = String(parts.day).padStart(2, '0');
+  const hour = String(parts.hour).padStart(2, '0');
+  const minute = String(parts.minute).padStart(2, '0');
+  const displayDate = formatDisplayDate(`${year}-${month}-${day}`);
+  const displayTime = formatDisplayTime(`${hour}:${minute}`, timeFormat);
+  return `${displayDate}, ${displayTime}`;
+}
+

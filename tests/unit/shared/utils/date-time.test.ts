@@ -8,6 +8,9 @@ import {
   formatIsoTimestamp,
   nowIsoUtc,
   detectBrowserTimeZone,
+  getZonedCalendarDate,
+  isPastLocalNineAm,
+  formatZonedDateTime,
 } from '@/shared/utils';
 
 describe('Pure Date & Time Utilities (shared/utils/date-time)', () => {
@@ -211,6 +214,80 @@ describe('Pure Date & Time Utilities (shared/utils/date-time)', () => {
       const tz = detectBrowserTimeZone();
       expect(typeof tz).toBe('string');
       expect(tz.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getZonedCalendarDate (005-notifications, REQ-NT-07)', () => {
+    it('should return canonical YYYY-MM-DD in the specified IANA timezone across midnight rollovers', () => {
+      // 2026-11-18T03:30:00.000Z is 2026-11-18 in UTC, but 2026-11-17 22:30 in America/Bogota (UTC-5)
+      const instant = new Date('2026-11-18T03:30:00.000Z');
+      expect(getZonedCalendarDate(instant, 'UTC')).toBe('2026-11-18');
+      expect(getZonedCalendarDate(instant, 'America/Bogota')).toBe('2026-11-17');
+
+      // 2026-11-18T15:00:00.000Z is 2026-11-19 00:00 in Asia/Tokyo (UTC+9)
+      const tokyoRollover = new Date('2026-11-18T15:00:00.000Z');
+      expect(getZonedCalendarDate(tokyoRollover, 'Asia/Tokyo')).toBe('2026-11-19');
+      expect(getZonedCalendarDate(tokyoRollover, 'America/Bogota')).toBe('2026-11-18');
+    });
+
+    it('should handle DST boundary dates accurately in America/New_York', () => {
+      // 2026-11-01 is US fall-back DST day; 2026-11-01T03:30:00.000Z = 2026-10-31 23:30 EDT (UTC-4)
+      expect(getZonedCalendarDate(new Date('2026-11-01T03:30:00.000Z'), 'America/New_York')).toBe(
+        '2026-10-31',
+      );
+      // 2026-11-01T04:00:00.000Z = 2026-11-01 00:00 EDT
+      expect(getZonedCalendarDate(new Date('2026-11-01T04:00:00.000Z'), 'America/New_York')).toBe(
+        '2026-11-01',
+      );
+    });
+  });
+
+  describe('isPastLocalNineAm (005-notifications, REQ-NT-07)', () => {
+    it('should return false at 08:59:59 local and true at 09:00:00 local and later', () => {
+      // In America/Bogota (UTC-5): 08:59:59 local = 13:59:59 UTC; 09:00:00 local = 14:00:00 UTC
+      expect(
+        isPastLocalNineAm(new Date('2026-11-18T13:59:59.000Z'), 'America/Bogota'),
+      ).toBe(false);
+      expect(
+        isPastLocalNineAm(new Date('2026-11-18T14:00:00.000Z'), 'America/Bogota'),
+      ).toBe(true);
+      expect(
+        isPastLocalNineAm(new Date('2026-11-18T23:59:59.000Z'), 'America/Bogota'),
+      ).toBe(true);
+    });
+
+    it('should respect timezone differences for the 09:00 cutoff', () => {
+      // 2026-11-18T10:00:00.000Z is 10:00 in UTC (>= 09:00) but 05:00 in America/Bogota (< 09:00)
+      const instant = new Date('2026-11-18T10:00:00.000Z');
+      expect(isPastLocalNineAm(instant, 'UTC')).toBe(true);
+      expect(isPastLocalNineAm(instant, 'America/Bogota')).toBe(false);
+    });
+  });
+
+  describe('formatZonedDateTime (005-notifications, REQ-NT-14(2), UI-07)', () => {
+    it('should format ISO UTC timestamp as dd/mm/aaaa, HH:mm in 24h mode', () => {
+      // 2026-11-18T19:30:00.000Z = 18/11/2026 14:30 in America/Bogota (UTC-5)
+      expect(formatZonedDateTime('2026-11-18T19:30:00.000Z', 'America/Bogota', '24h')).toBe(
+        '18/11/2026, 14:30',
+      );
+      expect(formatZonedDateTime('2026-11-18T19:30:00.000Z', 'UTC', '24h')).toBe(
+        '18/11/2026, 19:30',
+      );
+    });
+
+    it('should format ISO UTC timestamp as dd/mm/aaaa, hh:mm a. m./p. m. in 12h mode', () => {
+      // 2026-11-18T19:30:00.000Z = 14:30 Bogota -> 02:30 p. m.
+      expect(formatZonedDateTime('2026-11-18T19:30:00.000Z', 'America/Bogota', '12h')).toBe(
+        '18/11/2026, 02:30 p. m.',
+      );
+      // 2026-11-18T05:05:00.000Z = 00:05 Bogota -> 12:05 a. m.
+      expect(formatZonedDateTime('2026-11-18T05:05:00.000Z', 'America/Bogota', '12h')).toBe(
+        '18/11/2026, 12:05 a. m.',
+      );
+      // 2026-11-18T17:00:00.000Z = 12:00 Bogota -> 12:00 p. m.
+      expect(formatZonedDateTime('2026-11-18T17:00:00.000Z', 'America/Bogota', '12h')).toBe(
+        '18/11/2026, 12:00 p. m.',
+      );
     });
   });
 });

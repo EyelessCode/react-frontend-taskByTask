@@ -20,7 +20,7 @@
   - **Done when:** `es.notifications` compiles under `LocalizationDictionary`, schemas validate cleanly, and unit tests + typecheck + lint pass.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Timezone Date/Time Formatting Helpers (`UI-07`, `RNF-14`, `RF-28`)**
+- [x] **T2: Timezone Date/Time Formatting Helpers (`UI-07`, `RNF-14`, `RF-28`)**
   - **Associated Requirements:** `REQ-NT-07`, `REQ-NT-11`, `REQ-NT-14(2)`, `REQ-NT-18`
   - **Files Touched:**
     - `tests/unit/shared/utils/date-time.test.ts` (modified — unit tests for `getZonedCalendarDate`, `isPastLocalNineAm`, and `formatZonedDateTime` across `America/Bogota`, `UTC`, DST boundaries, `'24h'`, and `'12h'`)
