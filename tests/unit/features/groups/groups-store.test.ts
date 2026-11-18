@@ -334,5 +334,60 @@ describe('useGroupsStore (unit/features/groups/groups-store)', () => {
         group: null,
       });
     });
+
+    it('should invoke onTasksDeleted with deleted group task IDs during deleteGroup cascade (005-notifications, REQ-NT-09(5))', async () => {
+      const deletedBatches: Array<{ taskIds: string[]; userId: string }> = [];
+      configureGroupsStore({
+        groupRepository,
+        taskRepository,
+        tagRepository,
+        getActiveUserId: () => Promise.resolve(SEED_PERSONAL_GROUP.creatorId),
+        onTasksDeleted: async (taskIds, userId) => {
+          deletedBatches.push({ taskIds, userId });
+        },
+      });
+
+      await groupRepository.save(workGroup);
+      await taskRepository.save({
+        id: 't-work-1',
+        title: 'Tarea Trabajo 1',
+        description: null,
+        groupId: workGroup.id,
+        tagIds: [],
+        completed: false,
+        createdAt: '2026-11-01T10:00:00.000Z',
+        completedAt: null,
+        dueDate: '2026-11-25',
+        dueTime: null,
+        assigneeId: null,
+        subtasks: [],
+        reminders: [],
+      });
+      await taskRepository.save({
+        id: 't-work-2',
+        title: 'Tarea Trabajo 2',
+        description: null,
+        groupId: workGroup.id,
+        tagIds: [],
+        completed: false,
+        createdAt: '2026-11-01T10:05:00.000Z',
+        completedAt: null,
+        dueDate: null,
+        dueTime: null,
+        assigneeId: null,
+        subtasks: [],
+        reminders: [],
+      });
+
+      await useGroupsStore.getState().init();
+      await useGroupsStore.getState().deleteGroup(workGroup.id);
+
+      expect(deletedBatches).toEqual([
+        {
+          taskIds: ['t-work-1', 't-work-2'],
+          userId: SEED_PERSONAL_GROUP.creatorId,
+        },
+      ]);
+    });
   });
 });

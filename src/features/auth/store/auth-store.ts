@@ -3,6 +3,7 @@ import type {
   GroupRepository,
   LoginLockoutRepository,
   NotificationRepository,
+  NotificationStateRepository,
   RecoveryCodeRepository,
   SessionRepository,
   TagRepository,
@@ -13,6 +14,7 @@ import {
   LocalStorageGroupRepository,
   LocalStorageLoginLockoutRepository,
   LocalStorageNotificationRepository,
+  LocalStorageNotificationStateRepository,
   LocalStorageRecoveryCodeRepository,
   LocalStorageSessionRepository,
   LocalStorageTagRepository,
@@ -115,6 +117,7 @@ export interface AuthStoreDependencies {
   recoveryCodeRepository: RecoveryCodeRepository;
   loginLockoutRepository: LoginLockoutRepository;
   notificationRepository: NotificationRepository;
+  notificationStateRepository: NotificationStateRepository;
   groupRepository: GroupRepository;
   taskRepository: TaskRepository;
   tagRepository: TagRepository;
@@ -142,6 +145,7 @@ function createDefaultDependencies(): AuthStoreDependencies {
     recoveryCodeRepository: new LocalStorageRecoveryCodeRepository(),
     loginLockoutRepository: new LocalStorageLoginLockoutRepository(),
     notificationRepository: new LocalStorageNotificationRepository(),
+    notificationStateRepository: new LocalStorageNotificationStateRepository(),
     groupRepository: new LocalStorageGroupRepository(),
     taskRepository: new LocalStorageTaskRepository(),
     tagRepository: new LocalStorageTagRepository(),
@@ -628,6 +632,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     await deps.recoveryCodeRepository.deleteByUserId(user.id);
     await deps.notificationRepository.deleteByUserId(user.id);
+    await deps.notificationStateRepository.deleteByUserId(user.id);
     await deps.loginLockoutRepository.clearByEmail(user.email);
     await deps.userRepository.delete(user.id);
     await deps.sessionRepository.clear();

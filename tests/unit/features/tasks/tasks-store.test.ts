@@ -474,4 +474,78 @@ describe('useTasksStore (unit/features/tasks/tasks-store)', () => {
     ).rejects.toThrow();
     await expect(useTasksStore.getState().deleteTagFromGroup(foreignTag.id)).rejects.toThrow();
   });
+
+  it('invokes notificationHooks across createTask, updateTask, toggleTaskComplete, copyTask, and deleteTask (005-notifications, REQ-NT-09)', async () => {
+    const onTaskSaved = { fn: async () => Promise.resolve() };
+    const savedCalls: Array<{ taskId: string; userId: string; scheduleChanged: boolean }> = [];
+    const toggledCalls: Array<{ taskId: string; completed: boolean; userId: string }> = [];
+    const deletedCalls: Array<{ taskId: string; userId: string }> = [];
+
+    configureTasksStore({
+      taskRepository,
+      groupRepository,
+      tagRepository,
+      getActiveUserId: () => Promise.resolve(SEED_PERSONAL_GROUP.creatorId),
+      notificationHooks: {
+        onTaskSaved: async (task, userId, scheduleChanged) => {
+          savedCalls.push({ taskId: task.id, userId, scheduleChanged });
+          return onTaskSaved.fn();
+        },
+        onTaskToggled: async (task, userId) => {
+          toggledCalls.push({ taskId: task.id, completed: task.completed, userId });
+        },
+        onTaskDeleted: async (taskId, userId) => {
+          deletedCalls.push({ taskId, userId });
+        },
+      },
+    });
+
+    await groupRepository.save(workGroup);
+    await useTasksStore.getState().init();
+
+    // 1. createTask -> scheduleChanged: true
+    const created = await useTasksStore.getState().createTask({
+      title: 'Con aviso',
+      dueDate: '2026-11-25',
+      dueTime: '09:00',
+      groupId: SEED_PERSONAL_GROUP.id,
+    });
+    expect(savedCalls).toEqual([
+      { taskId: created.id, userId: SEED_PERSONAL_GROUP.creatorId, scheduleChanged: true },
+    ]);
+
+    // 2. updateTask without changing dueDate/dueTime -> scheduleChanged: false
+    await useTasksStore.getState().updateTask(created.id, { title: 'Renombrada sin cambiar fecha' });
+    expect(savedCalls[1]).toEqual({
+      taskId: created.id,
+      userId: SEED_PERSONAL_GROUP.creatorId,
+      scheduleChanged: false,
+    });
+
+    // 3. updateTask changing dueTime -> scheduleChanged: true
+    await useTasksStore.getState().updateTask(created.id, { dueTime: '14:30' });
+    expect(savedCalls[2]).toEqual({
+      taskId: created.id,
+      userId: SEED_PERSONAL_GROUP.creatorId,
+      scheduleChanged: true,
+    });
+
+    // 4. toggleTaskComplete -> invokes onTaskToggled
+    await useTasksStore.getState().toggleTaskComplete(created.id);
+    expect(toggledCalls).toEqual([
+      { taskId: created.id, completed: true, userId: SEED_PERSONAL_GROUP.creatorId },
+    ]);
+
+    // 5. copyTask -> invokes onTaskSaved with new copied task id and scheduleChanged: true
+    const copied = await useTasksStore.getState().copyTask(created.id, 'grp-work');
+    expect(savedCalls[3]).toEqual({
+      taskId: copied.id,
+      userId: SEED_PERSONAL_GROUP.creatorId,
+      scheduleChanged: true,
+    });
+
+    // 6. deleteTask -> invokes onTaskDeleted
+    await useTasksStore.getState().deleteTask(created.id);
+    expect(deletedCalls).toEqual([{ taskId: created.id, userId: SEED_PERSONAL_GROUP.creatorId }]);
+  });
 });

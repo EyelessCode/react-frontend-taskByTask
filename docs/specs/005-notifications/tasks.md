@@ -63,7 +63,7 @@
   - **Done when:** `notifications-store.test.ts` passes cleanly and active timers never leak after `clearActiveRuntime()` / `resetNotificationsStore()`.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Cross-Feature Store Lifecycle Wiring (`useAuthStore`, `useTasksStore`, `useGroupsStore`) (`RF-05`, `RF-07`, `RF-13`, `RF-14`, `RF-16`, `RF-28`)**
+- [x] **T6: Cross-Feature Store Lifecycle Wiring (`useAuthStore`, `useTasksStore`, `useGroupsStore`) (`RF-05`, `RF-07`, `RF-13`, `RF-14`, `RF-16`, `RF-28`)**
   - **Associated Requirements:** `REQ-NT-09`, `REQ-NT-12`, `REQ-NT-17`, `REQ-AU-19`
   - **Files Touched:**
     - `tests/unit/features/auth/auth-store.test.ts` (modified — assert `deleteAccount` deletes `tbt:v1:notification_state` for deleted user while preserving other users' state)

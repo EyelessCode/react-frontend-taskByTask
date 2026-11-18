@@ -17,6 +17,7 @@ import {
 } from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
 import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
+import { useNotificationsStore } from '../../notifications/store';
 import { useTasksStore } from '../../tasks/store/tasks-store';
 
 export type GroupModalType = 'create' | 'rename' | 'delete' | null;
@@ -59,17 +60,24 @@ export interface GroupsStoreDependencies {
   taskRepository: TaskRepository;
   tagRepository: TagRepository;
   getActiveUserId: () => Promise<string | null>;
+  onTasksDeleted?: (taskIds: string[], userId: string) => Promise<void>;
 }
 
-let deps: GroupsStoreDependencies = {
-  groupRepository: new LocalStorageGroupRepository(),
-  taskRepository: new LocalStorageTaskRepository(),
-  tagRepository: new LocalStorageTagRepository(),
-  getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
-};
+function createDefaultDependencies(): GroupsStoreDependencies {
+  return {
+    groupRepository: new LocalStorageGroupRepository(),
+    taskRepository: new LocalStorageTaskRepository(),
+    tagRepository: new LocalStorageTagRepository(),
+    getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
+    onTasksDeleted: (taskIds, userId) =>
+      useNotificationsStore.getState().handleTasksDeleted(taskIds, userId),
+  };
+}
+
+let deps: GroupsStoreDependencies = createDefaultDependencies();
 
 export function configureGroupsStore(newDeps: Partial<GroupsStoreDependencies>): void {
-  deps = { ...deps, ...newDeps };
+  deps = { ...createDefaultDependencies(), ...newDeps };
 }
 
 function isGroupAccessibleToUser(group: Group, userId: string): boolean {
@@ -236,9 +244,13 @@ export const useGroupsStore = create<GroupsStore>()((set) => ({
         throw new BusinessRuleViolationError(es.groups.cannotDeletePersonal);
       }
 
+      const groupTasks = await deps.taskRepository.getByGroupId(groupId);
+      const deletedTaskIds = groupTasks.map((t) => t.id);
+
       await deps.groupRepository.delete(groupId);
       await deps.taskRepository.deleteByGroupId(groupId);
       await deps.tagRepository.deleteByGroupId(groupId);
+      await deps.onTasksDeleted?.(deletedTaskIds, activeUserId);
 
       set((state) => {
         const remainingSelected = state.selectedGroupIds.filter((id) => id !== groupId);

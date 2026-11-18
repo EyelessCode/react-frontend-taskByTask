@@ -15,6 +15,7 @@ import {
 import { BusinessRuleViolationError, NotFoundError } from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
 import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
+import { useNotificationsStore } from '../../notifications/store';
 
 export type ModalType =
   | 'create'
@@ -66,22 +67,41 @@ export interface TasksActions {
 
 export type TasksStore = TasksState & TasksActions;
 
+export interface TaskNotificationHooks {
+  onTaskSaved: (task: Task, userId: string, scheduleChanged: boolean) => Promise<void>;
+  onTaskToggled: (task: Task, userId: string) => Promise<void>;
+  onTaskDeleted: (taskId: string, userId: string) => Promise<void>;
+}
+
 export interface TasksStoreDependencies {
   taskRepository: TaskRepository;
   groupRepository: GroupRepository;
   tagRepository: TagRepository;
   getActiveUserId: () => Promise<string | null>;
+  notificationHooks?: TaskNotificationHooks;
 }
 
-let deps: TasksStoreDependencies = {
-  taskRepository: new LocalStorageTaskRepository(),
-  groupRepository: new LocalStorageGroupRepository(),
-  tagRepository: new LocalStorageTagRepository(),
-  getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
-};
+function createDefaultDependencies(): TasksStoreDependencies {
+  return {
+    taskRepository: new LocalStorageTaskRepository(),
+    groupRepository: new LocalStorageGroupRepository(),
+    tagRepository: new LocalStorageTagRepository(),
+    getActiveUserId: () => useAuthStore.getState().ensureActiveUserId(),
+    notificationHooks: {
+      onTaskSaved: (task, userId, scheduleChanged) =>
+        useNotificationsStore.getState().handleTaskSaved(task, userId, scheduleChanged),
+      onTaskToggled: (task, userId) =>
+        useNotificationsStore.getState().handleTaskToggled(task, userId),
+      onTaskDeleted: (taskId, userId) =>
+        useNotificationsStore.getState().handleTaskDeleted(taskId, userId),
+    },
+  };
+}
+
+let deps: TasksStoreDependencies = createDefaultDependencies();
 
 export function configureTasksStore(newDeps: Partial<TasksStoreDependencies>): void {
-  deps = { ...deps, ...newDeps };
+  deps = { ...createDefaultDependencies(), ...newDeps };
 }
 
 const initialState: TasksState = {
@@ -286,6 +306,8 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
       set({ allTags });
     }
 
+    await deps.notificationHooks?.onTaskSaved(newTask, activeUserId, true);
+
     return newTask;
   },
 
@@ -331,6 +353,10 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
       set({ allTags });
     }
 
+    const scheduleChanged =
+      existing.dueDate !== updatedTask.dueDate || existing.dueTime !== updatedTask.dueTime;
+    await deps.notificationHooks?.onTaskSaved(updatedTask, activeUserId, scheduleChanged);
+
     return updatedTask;
   },
 
@@ -347,6 +373,8 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== taskId),
     }));
+
+    await deps.notificationHooks?.onTaskDeleted(taskId, activeUserId);
   },
 
   toggleTaskComplete: async (taskId: string) => {
@@ -369,6 +397,8 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     set((state) => ({
       tasks: state.tasks.map((t) => (t.id === taskId ? updated : t)),
     }));
+
+    await deps.notificationHooks?.onTaskToggled(updated, activeUserId);
   },
 
   moveTask: async (taskId: string, targetGroupId: string) => {
@@ -467,6 +497,8 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     } else {
       set({ allTags });
     }
+
+    await deps.notificationHooks?.onTaskSaved(copiedTask, activeUserId, true);
 
     return copiedTask;
   },

@@ -10,6 +10,7 @@ import {
   LocalStorageGroupRepository,
   LocalStorageLoginLockoutRepository,
   LocalStorageNotificationRepository,
+  LocalStorageNotificationStateRepository,
   LocalStorageRecoveryCodeRepository,
   LocalStorageSessionRepository,
   LocalStorageTagRepository,
@@ -40,6 +41,7 @@ describe('useAuthStore', () => {
       recoveryCodeRepository: new LocalStorageRecoveryCodeRepository(adapter),
       loginLockoutRepository: new LocalStorageLoginLockoutRepository(adapter),
       notificationRepository: new LocalStorageNotificationRepository(adapter),
+      notificationStateRepository: new LocalStorageNotificationStateRepository(adapter),
       groupRepository: new LocalStorageGroupRepository(adapter),
       taskRepository: new LocalStorageTaskRepository(adapter),
       tagRepository: new LocalStorageTagRepository(adapter),
@@ -312,6 +314,24 @@ describe('useAuthStore', () => {
     const u2Groups = await groupRepo.getAccessibleByUserId(user2Id);
     const u2PersonalId = u2Groups[0]!.id;
     const u2Tag = await tagRepo.ensureTag(u2PersonalId, 'urgente');
+    const notifStateRepo = new LocalStorageNotificationStateRepository(adapter);
+    await notifStateRepo.save({
+      userId: user1Id,
+      permissionPromptLastShownAt: '2026-11-15T10:00:00.000Z',
+      handledOccurrences: [],
+    });
+    await notifStateRepo.save({
+      userId: user2Id,
+      permissionPromptLastShownAt: '2026-11-15T11:00:00.000Z',
+      handledOccurrences: [
+        {
+          taskId: 'task-u2',
+          occurrenceKey: '2026-11-20|date-only',
+          status: 'notified',
+          recordedAt: '2026-11-15T11:00:00.000Z',
+        },
+      ],
+    });
     await taskRepo.save({
       id: 'task-u2',
       title: 'Tarea de User 2',
@@ -346,6 +366,11 @@ describe('useAuthStore', () => {
     expect(await groupRepo.getAccessibleByUserId(user1Id)).toHaveLength(1);
     expect(await taskRepo.getByGroupId(u2PersonalId)).toEqual([]);
     expect(await tagRepo.getByGroupId(u2PersonalId)).toEqual([]);
+    expect((await notifStateRepo.getByUserId(user2Id)).permissionPromptLastShownAt).toBeNull();
+    expect((await notifStateRepo.getByUserId(user2Id)).handledOccurrences).toEqual([]);
+    expect((await notifStateRepo.getByUserId(user1Id)).permissionPromptLastShownAt).toBe(
+      '2026-11-15T10:00:00.000Z',
+    );
 
     unsubscribe();
   });
