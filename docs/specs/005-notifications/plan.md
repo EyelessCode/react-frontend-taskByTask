@@ -1,8 +1,8 @@
 # Implementation Plan: `005-notifications` (Browser Notifications & In-App Notification Center)
 
 - **Feature Name:** `005-notifications`
-- **Status:** approved
-- **Approved Spec:** [docs/specs/005-notifications/spec.md](./spec.md) (`Status: approved`)
+- **Status:** implemented
+- **Approved Spec:** [docs/specs/005-notifications/spec.md](./spec.md) (`Status: implemented`)
 - **Constitution:** [docs/constitution.md](../../constitution.md)
 - **Reference Patterns:** `src/features/tasks/` (golden reference), `src/features/groups/`, `src/features/auth/`
 

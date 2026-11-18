@@ -1,7 +1,7 @@
 # Spec 005: Browser Notifications & In-App Notification Center
 
 - **Feature Name:** `005-notifications`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-15
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-27`, `RF-28`, `RF-29`, `RF-13`, `RF-14`, `RF-02`, `RF-05`, `RF-07`, `UI-01`, `UI-02`, `UI-07`, `RNF-01`, `RNF-03`, `RNF-07`, `RNF-10`, `RNF-12`, `RNF-14`, `RNF-15`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix A`, `Appendix B`, `Constitution Principles 1–6`

@@ -1,8 +1,8 @@
 # Task Checklist: `005-notifications` (Browser Notifications & In-App Notification Center)
 
 - **Feature Name:** `005-notifications`
-- **Spec Reference:** [docs/specs/005-notifications/spec.md](./spec.md) (`Status: approved`)
-- **Plan Reference:** [docs/specs/005-notifications/plan.md](./plan.md) (`Status: approved`)
+- **Spec Reference:** [docs/specs/005-notifications/spec.md](./spec.md) (`Status: implemented`)
+- **Plan Reference:** [docs/specs/005-notifications/plan.md](./plan.md) (`Status: implemented`)
 
 ---
 
@@ -97,7 +97,7 @@
   - **Done when:** All Playwright E2E specs (`notifications.spec.ts` + all existing E2E specs) pass cleanly.
   - **Verification Command:** `npm run e2e`
 
-- [ ] **T9: Final Verification, Spec Closure & Memory Sync**
+- [x] **T9: Final Verification, Spec Closure & Memory Sync**
   - **Associated Requirements:** `Constitution Principle 6`, `AGENTS.md`
   - **Files Touched:**
     - `docs/specs/005-notifications/spec.md` (modified — update `Status: implemented`)
