@@ -88,7 +88,7 @@
   - **Done when:** All existing and new RTL unit/integration tests pass with zero warnings or console errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Playwright End-to-End Tests (`AC-NT-01`..`AC-NT-10`)**
+- [x] **T8: Playwright End-to-End Tests (`AC-NT-01`..`AC-NT-10`)**
   - **Associated Requirements:** `AC-NT-01`..`AC-NT-10`, `UI-01`, `RNF-12`, `RNF-14`, `RNF-15`
   - **Files Touched:**
     - `tests/e2e/notifications.spec.ts` (created — comprehensive Playwright E2E suite testing `'default'` banner & 8-hour per-user cooldown across reload, `'denied'` instructions in banner & panel, `"Activar avisos"` permission grant + best-effort native notification trigger, date-only today `>= 09:00` immediate trigger & exact timed trigger & no-spam past creation across reload, task edit/complete/uncheck/delete & group delete cancellation, reload deduplication, logout cessation, Notification Center unread badge + `"Marcar como leída"` + `"Marcar todas como leídas"` + `"Eliminar"` + `12h` format + 30-day retention pruning + account deletion cleanup, verified at desktop `1280x720` and mobile `375x812` with zero console/page errors)
