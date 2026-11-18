@@ -53,7 +53,7 @@
   - **Done when:** All scheduler, cooldown, capped timer, and browser adapter unit tests pass with zero warnings.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: Notifications Zustand Store (`useNotificationsStore`), Hook & Session Teardown (`RF-02`, `RF-27`–`RF-29`)**
+- [x] **T5: Notifications Zustand Store (`useNotificationsStore`), Hook & Session Teardown (`RF-02`, `RF-27`–`RF-29`)**
   - **Associated Requirements:** `REQ-NT-01`..`REQ-NT-17`
   - **Files Touched:**
     - `tests/unit/features/notifications/notifications-store.test.ts` (created — full store tests: `init` permission inspection & 8h per-`userId` banner, `openCenter` 30-day pruning, `requestPermission` & `dismissPermissionBanner` cooldown preservation, catch-up & reload dedupe, `handleTaskSaved` / `handleTaskToggled` / `handleTaskDeleted` / `handleTasksDeleted`, non-schedule edit title update without refire, best-effort native popup dispatch catching throws, `markAsRead` / `markAllAsRead` / `deleteNotification`, multi-user isolation, and `subscribeAuthSessionEnd` immediate timer cancellation for `'logout'` / `'expired'` / `'orphan'` / `'deleted'`)
