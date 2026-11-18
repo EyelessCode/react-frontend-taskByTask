@@ -29,7 +29,7 @@
   - **Done when:** All new and existing `date-time.test.ts` cases pass with zero type or lint errors.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: Notification & Device Notification State Repositories (`RF-27`, `RF-29`, `RNF-07`, `RNF-10`, `Appendix B`)**
+- [x] **T3: Notification & Device Notification State Repositories (`RF-27`, `RF-29`, `RNF-07`, `RNF-10`, `Appendix B`)**
   - **Associated Requirements:** `REQ-NT-02`, `REQ-NT-10`, `REQ-NT-12`, `REQ-NT-13`, `REQ-NT-15`, `REQ-NT-16`, `REQ-NT-17`
   - **Files Touched:**
     - `tests/unit/data/local-storage-notification-repositories.test.ts` (created — unit tests for `save`, newest-first ordering, `markAsRead`, `markAllAsRead`, `delete`, `pruneExpired` `< 30` days vs `>= 30` days, strict `userId` isolation on `LocalStorageNotificationRepository`, plus `getByUserId`, `save`, `deleteByUserId`, and Zod validation on `LocalStorageNotificationStateRepository`)

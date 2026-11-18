@@ -11,3 +11,4 @@ export * from './session-repository';
 export * from './recovery-code-repository';
 export * from './login-lockout-repository';
 export * from './notification-repository';
+export * from './notification-state-repository';

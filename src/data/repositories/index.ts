@@ -9,3 +9,4 @@ export * from './local-storage-session-repository';
 export * from './local-storage-recovery-code-repository';
 export * from './local-storage-login-lockout-repository';
 export * from './local-storage-notification-repository';
+export * from './local-storage-notification-state-repository';
