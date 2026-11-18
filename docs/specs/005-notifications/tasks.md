@@ -76,7 +76,7 @@
   - **Done when:** All unit tests for auth, tasks, groups, and notifications pass cleanly together.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: Notification UI Components & Workspace Header Integration (`RF-27`, `RF-29`, `UI-01`, `UI-07`, `RNF-12`, `RNF-14`)**
+- [x] **T7: Notification UI Components & Workspace Header Integration (`RF-27`, `RF-29`, `UI-01`, `UI-07`, `RNF-12`, `RNF-14`)**
   - **Associated Requirements:** `REQ-NT-01`..`REQ-NT-05`, `REQ-NT-13`..`REQ-NT-18`
   - **Files Touched:**
     - `tests/integration/features/notifications/notifications-flow.test.tsx` (created — RTL + `MockStorage` integration tests inside `GroupsGridView`: header unread badge & accessible label, banner `'default'` -> `"Ahora no"` 8h cooldown -> second user independent cooldown, `'denied'` guidance on both banner & panel, `"Activar avisos"` grant transition, `"Marcar como leída"`, `"Marcar todas como leídas"` disabled when `unreadCount === 0`, individual `"Eliminar"`, `'Sin leer'` non-color badge, `'12h'`/`'24h'` + `dd/mm/aaaa` formatting in `user.timeZone`, 30-day pruning on open, `Escape` panel close, task create/edit/complete/uncheck/delete & group delete integration, and unsupported browser graceful degradation)

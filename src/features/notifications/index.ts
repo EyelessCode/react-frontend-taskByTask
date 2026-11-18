@@ -1,4 +1,7 @@
 /**
  * Notifications feature module barrel.
  */
-export {};
+export * from './utils';
+export * from './store';
+export * from './hooks';
+export * from './components';

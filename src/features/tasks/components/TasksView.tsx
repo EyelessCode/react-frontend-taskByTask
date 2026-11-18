@@ -6,6 +6,12 @@ import Spinner from 'react-bootstrap/Spinner';
 import Alert from 'react-bootstrap/Alert';
 import { useTasks } from '../hooks/use-tasks';
 import { useAuth } from '../../auth/hooks';
+import { useNotifications } from '../../notifications/hooks';
+import {
+  NotificationCenterButton,
+  NotificationCenterPanel,
+  NotificationPermissionBanner,
+} from '../../notifications/components';
 import { TaskFilterTabs } from './TaskFilterTabs';
 import { TaskList } from './TaskList';
 import { TaskFormModal } from './TaskFormModal';
@@ -47,10 +53,17 @@ export function TasksView({ onNavigateToProfile, onLoggedOut }: TasksViewProps =
   } = useTasks();
 
   const lastRemovalTaskIdRef = useRef<string | null>(null);
+  const { init: notificationsInit } = useNotifications();
+  const activeUserId = currentUser?.id ?? null;
 
   useEffect(() => {
-    init();
-  }, [init]);
+    void (async () => {
+      await init();
+      if (isAuthenticated && activeUserId) {
+        await notificationsInit();
+      }
+    })();
+  }, [init, notificationsInit, isAuthenticated, activeUserId]);
 
   const activeModalTask = modalState.taskId
     ? rawTasks.find((t) => t.id === modalState.taskId) ?? null
@@ -99,35 +112,39 @@ export function TasksView({ onNavigateToProfile, onLoggedOut }: TasksViewProps =
         </div>
 
         {isAuthenticated && currentUser && (
-          <nav
-            aria-label="Cuenta"
-            className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-2 bg-light rounded border"
-          >
-            <span className="small fw-semibold">
-              {es.auth.greetingPrefix} {currentUser.displayName}
-            </span>
-            <div className="d-flex align-items-center gap-2">
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                type="button"
-                onClick={() => onNavigateToProfile?.()}
-              >
-                {es.auth.profileLink}
-              </Button>
-              <Button
-                variant="outline-danger"
-                size="sm"
-                type="button"
-                onClick={async () => {
-                  await logout();
-                  onLoggedOut?.();
-                }}
-              >
-                {es.auth.logoutButton}
-              </Button>
-            </div>
-          </nav>
+          <>
+            <nav
+              aria-label="Cuenta"
+              className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-2 bg-light rounded border"
+            >
+              <span className="small fw-semibold">
+                {es.auth.greetingPrefix} {currentUser.displayName}
+              </span>
+              <div className="d-flex align-items-center gap-2">
+                <NotificationCenterButton />
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => onNavigateToProfile?.()}
+                >
+                  {es.auth.profileLink}
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    onLoggedOut?.();
+                  }}
+                >
+                  {es.auth.logoutButton}
+                </Button>
+              </div>
+            </nav>
+            <NotificationPermissionBanner />
+          </>
         )}
 
         {activeGroup && (
@@ -225,6 +242,8 @@ export function TasksView({ onNavigateToProfile, onLoggedOut }: TasksViewProps =
           }
         }}
       />
+
+      {isAuthenticated && currentUser && <NotificationCenterPanel />}
     </Container>
   );
 }

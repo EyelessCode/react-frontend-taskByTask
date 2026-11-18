@@ -10,6 +10,12 @@ import Alert from 'react-bootstrap/Alert';
 import { useGroups } from '../hooks/use-groups';
 import { useTasks } from '../../tasks/hooks/use-tasks';
 import { useAuth } from '../../auth/hooks';
+import { useNotifications } from '../../notifications/hooks';
+import {
+  NotificationCenterButton,
+  NotificationCenterPanel,
+  NotificationPermissionBanner,
+} from '../../notifications/components';
 
 import { GroupCard } from './GroupCard';
 import { GroupsFilterToolbar } from './GroupsFilterToolbar';
@@ -74,11 +80,18 @@ export function GroupsGridView({
 
   const [inlineGroupId, setInlineGroupId] = useState<string | null>(null);
   const lastRemovalTaskIdRef = useRef<string | null>(null);
+  const { init: notificationsInit, refresh: notificationsRefresh } = useNotifications();
+  const activeUserId = currentUser?.id ?? null;
 
   useEffect(() => {
-    void init();
-    void tasksInit();
-  }, [init, tasksInit]);
+    void (async () => {
+      await init();
+      await tasksInit();
+      if (isAuthenticated && activeUserId) {
+        await notificationsInit();
+      }
+    })();
+  }, [init, tasksInit, notificationsInit, isAuthenticated, activeUserId]);
 
   const activeGroup =
     groups.find((g) => g.id === activeGroupId) ?? groups[0] ?? null;
@@ -95,35 +108,39 @@ export function GroupsGridView({
       {/* Header */}
       <header className="mb-4">
         {isAuthenticated && currentUser && (
-          <nav
-            aria-label="Cuenta"
-            className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-3 bg-light rounded border"
-          >
-            <span className="small fw-semibold">
-              {es.auth.greetingPrefix} {currentUser.displayName}
-            </span>
-            <div className="d-flex align-items-center gap-2">
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                type="button"
-                onClick={() => onNavigateToProfile?.()}
-              >
-                {es.auth.profileLink}
-              </Button>
-              <Button
-                variant="outline-danger"
-                size="sm"
-                type="button"
-                onClick={async () => {
-                  await logout();
-                  onLoggedOut?.();
-                }}
-              >
-                {es.auth.logoutButton}
-              </Button>
-            </div>
-          </nav>
+          <>
+            <nav
+              aria-label="Cuenta"
+              className="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 mb-3 bg-light rounded border"
+            >
+              <span className="small fw-semibold">
+                {es.auth.greetingPrefix} {currentUser.displayName}
+              </span>
+              <div className="d-flex align-items-center gap-2">
+                <NotificationCenterButton />
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => onNavigateToProfile?.()}
+                >
+                  {es.auth.profileLink}
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    onLoggedOut?.();
+                  }}
+                >
+                  {es.auth.logoutButton}
+                </Button>
+              </div>
+            </nav>
+            <NotificationPermissionBanner />
+          </>
         )}
 
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
@@ -181,7 +198,14 @@ export function GroupsGridView({
         onToggleGroup={toggleGroupId}
         onSelectAllGroups={() => setSelectedGroupIds([])}
         onCreateGroup={() => openGroupModal('create')}
-        onRefresh={refresh}
+        onRefresh={() => {
+          void (async () => {
+            await refresh();
+            if (isAuthenticated && activeUserId) {
+              await notificationsRefresh();
+            }
+          })();
+        }}
         isRefreshing={isLoading}
       />
 
@@ -321,6 +345,8 @@ export function GroupsGridView({
           }
         }}
       />
+
+      {isAuthenticated && currentUser && <NotificationCenterPanel />}
     </Container>
   );
 }
