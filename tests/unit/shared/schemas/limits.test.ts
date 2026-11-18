@@ -18,7 +18,12 @@ import {
   tagSchema,
   tagNameSchema,
   notificationSchema,
+  handledDueOccurrenceStatusSchema,
+  handledDueOccurrenceSchema,
+  userNotificationStateSchema,
   invitationSchema,
+  type HandledDueOccurrence,
+  type UserNotificationState,
   type User,
   type Group,
   type Task,
@@ -32,6 +37,7 @@ import {
   type Invitation,
 } from '@/shared/schemas';
 import { es } from '@/shared/i18n';
+import { STORAGE_KEYS } from '@/data/storage';
 
 describe('Appendix B Canonical Limits and Schemas', () => {
   describe('LIMITS numeric constants', () => {
@@ -449,6 +455,82 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         createdAt: '2026-11-02T12:00:00.000Z',
       };
       expect(notificationSchema.safeParse(notif).success).toBe(true);
+    });
+
+    it('should keep 30-day notification retention limit (RF-29, Appendix B)', () => {
+      expect(LIMITS.NOTIFICATION_RETENTION_DAYS).toBe(30);
+    });
+
+    it('should expose additive versioned notification state storage key (RNF-19)', () => {
+      expect(STORAGE_KEYS.NOTIFICATION_STATE).toBe('tbt:v1:notification_state');
+      expect(STORAGE_KEYS.NOTIFICATIONS).toBe('tbt:v1:notifications');
+    });
+
+    it('should validate handled due occurrence records (RF-28 deduplication)', () => {
+      expect(handledDueOccurrenceStatusSchema.safeParse('notified').success).toBe(true);
+      expect(handledDueOccurrenceStatusSchema.safeParse('suppressed').success).toBe(true);
+      expect(handledDueOccurrenceStatusSchema.safeParse('pending').success).toBe(false);
+
+      const occurrence: HandledDueOccurrence = {
+        taskId: 'task-1',
+        occurrenceKey: '2026-12-25|14:30',
+        status: 'notified',
+        recordedAt: '2026-12-25T19:30:00.000Z',
+      };
+      expect(handledDueOccurrenceSchema.safeParse(occurrence).success).toBe(true);
+
+      expect(
+        handledDueOccurrenceSchema.safeParse({ ...occurrence, occurrenceKey: '' }).success,
+      ).toBe(false);
+      expect(handledDueOccurrenceSchema.safeParse({ ...occurrence, taskId: '' }).success).toBe(
+        false,
+      );
+      expect(
+        handledDueOccurrenceSchema.safeParse({ ...occurrence, status: 'fired' }).success,
+      ).toBe(false);
+      expect(
+        handledDueOccurrenceSchema.safeParse({ ...occurrence, recordedAt: 'not-a-date' }).success,
+      ).toBe(false);
+    });
+
+    it('should validate per-user notification state with defaults (RF-27 cooldown, RF-28 dedup)', () => {
+      const parsedMinimal = userNotificationStateSchema.safeParse({ userId: 'usr-1' });
+      expect(parsedMinimal.success).toBe(true);
+      if (parsedMinimal.success) {
+        expect(parsedMinimal.data).toEqual({
+          userId: 'usr-1',
+          permissionPromptLastShownAt: null,
+          handledOccurrences: [],
+        });
+      }
+
+      const fullState: UserNotificationState = {
+        userId: 'usr-1',
+        permissionPromptLastShownAt: '2026-11-18T10:00:00.000Z',
+        handledOccurrences: [
+          {
+            taskId: 'task-1',
+            occurrenceKey: '2026-12-25|date-only',
+            status: 'suppressed',
+            recordedAt: '2026-11-18T10:00:00.000Z',
+          },
+        ],
+      };
+      expect(userNotificationStateSchema.safeParse(fullState).success).toBe(true);
+
+      expect(userNotificationStateSchema.safeParse({ userId: '' }).success).toBe(false);
+      expect(
+        userNotificationStateSchema.safeParse({
+          ...fullState,
+          permissionPromptLastShownAt: 'yesterday',
+        }).success,
+      ).toBe(false);
+      expect(
+        userNotificationStateSchema.safeParse({
+          ...fullState,
+          handledOccurrences: [{ taskId: 'task-1' }],
+        }).success,
+      ).toBe(false);
     });
 
     it('should validate Invitation schema', () => {

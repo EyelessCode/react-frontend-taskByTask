@@ -14,6 +14,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
     expect(dict.groups).toBeDefined();
     expect(dict.tags).toBeDefined();
     expect(dict.auth).toBeDefined();
+    expect(dict.notifications).toBeDefined();
   });
 
   describe('app namespace', () => {
@@ -353,6 +354,66 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.auth.clearTimeLabel).toBe('Limpiar hora');
       expect(es.auth.incompleteTimeError).toBe(
         'Completa la hora, los minutos y el periodo (AM/PM), o limpia la hora.',
+      );
+    });
+  });
+
+  describe('notifications namespace (005-notifications, RNF-14)', () => {
+    it('should expose Notification Center header and action copy (RF-29)', () => {
+      expect(es.notifications.centerButtonLabel).toBe('Notificaciones');
+      expect(es.notifications.centerButtonAria(0)).toBe(
+        'Abrir centro de notificaciones (0 sin leer)',
+      );
+      expect(es.notifications.centerButtonAria(3)).toBe(
+        'Abrir centro de notificaciones (3 sin leer)',
+      );
+      expect(es.notifications.centerTitle).toBe('Centro de notificaciones');
+      expect(es.notifications.emptyState).toBe('No tienes notificaciones en este momento.');
+      expect(es.notifications.unreadBadge).toBe('Sin leer');
+      expect(es.notifications.markAsReadButton).toBe('Marcar como leída');
+      expect(es.notifications.markAsReadAria).toBe('Marcar notificación como leída');
+      expect(es.notifications.markAllAsReadButton).toBe('Marcar todas como leídas');
+      expect(es.notifications.markAllAsReadAria).toBe(
+        'Marcar todas las notificaciones como leídas',
+      );
+      expect(es.notifications.deleteButton).toBe('Eliminar');
+      expect(es.notifications.deleteAria).toBe('Eliminar notificación');
+      expect(es.notifications.closeCenterAria).toBe('Cerrar centro de notificaciones');
+    });
+
+    it('should expose permission reminder, status, and blocked guidance copy (RF-27)', () => {
+      expect(es.notifications.permissionPromptTitle).toBe('Activa los avisos del navegador');
+      expect(es.notifications.permissionPromptBody).toBe(
+        'Recibe alertas cuando tus tareas alcancen su fecha de caducidad, incluso si cambias de pestaña.',
+      );
+      expect(es.notifications.enableNotificationsButton).toBe('Activar avisos');
+      expect(es.notifications.dismissReminderButton).toBe('Ahora no');
+      expect(es.notifications.permissionDefaultStatus).toBe(
+        'Avisos del navegador pendientes de activar',
+      );
+      expect(es.notifications.permissionDeniedStatus).toBe('Avisos del navegador bloqueados');
+      expect(es.notifications.permissionBlockedTitle).toBe(
+        'Notificaciones bloqueadas en este navegador',
+      );
+      expect(es.notifications.permissionBlockedInstructions).toBe(
+        'Has bloqueado los avisos para este sitio. Para reactivarlos, abre el ícono de candado o configuración junto a la barra de direcciones del navegador, cambia Notificaciones a "Permitir" y recarga la página.',
+      );
+      expect(es.notifications.permissionGrantedStatus).toBe('Avisos del navegador activados');
+      expect(es.notifications.permissionUnsupportedNote).toBe(
+        'Este navegador no admite avisos emergentes; seguirás viendo todas tus alertas aquí.',
+      );
+    });
+
+    it('should interpolate due alert content templates (RF-28)', () => {
+      expect(es.notifications.dueAlertTitle).toBe('Aviso de vencimiento');
+      expect(es.notifications.dueAlertWithTime('Estudiar', '25/12/2026', '14:30')).toBe(
+        'La tarea "Estudiar" vence el 25/12/2026 a las 14:30.',
+      );
+      expect(es.notifications.dueAlertWithTime('Reunión', '01/01/2027', '02:30 p. m.')).toBe(
+        'La tarea "Reunión" vence el 01/01/2027 a las 02:30 p. m..',
+      );
+      expect(es.notifications.dueAlertDateOnly('Estudiar', '25/12/2026')).toBe(
+        'La tarea "Estudiar" vence el 25/12/2026.',
       );
     });
   });

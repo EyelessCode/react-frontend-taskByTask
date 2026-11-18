@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Spanish Notification Localization, Notification State Schema & Storage Key (`RNF-14`, `RNF-19`)**
+- [x] **T1: Spanish Notification Localization, Notification State Schema & Storage Key (`RNF-14`, `RNF-19`)**
   - **Associated Requirements:** `REQ-NT-02`, `REQ-NT-03`, `REQ-NT-04`, `REQ-NT-05`, `REQ-NT-13`, `REQ-NT-14`, `REQ-NT-18`, Section 4.1, Section 4.3
   - **Files Touched:**
     - `tests/unit/shared/i18n/es.test.ts` (modified — assertions for `NotificationsLocalization` & every `es.notifications` key and template)

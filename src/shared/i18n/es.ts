@@ -38,6 +38,35 @@ export interface LocalizationDictionary {
   groups: GroupsLocalization;
   tags: TagsLocalization;
   auth: AuthLocalization;
+  notifications: NotificationsLocalization;
+}
+
+export interface NotificationsLocalization {
+  centerButtonLabel: string;
+  centerButtonAria: (count: number) => string;
+  centerTitle: string;
+  emptyState: string;
+  unreadBadge: string;
+  markAsReadButton: string;
+  markAsReadAria: string;
+  markAllAsReadButton: string;
+  markAllAsReadAria: string;
+  deleteButton: string;
+  deleteAria: string;
+  closeCenterAria: string;
+  permissionPromptTitle: string;
+  permissionPromptBody: string;
+  enableNotificationsButton: string;
+  dismissReminderButton: string;
+  permissionDefaultStatus: string;
+  permissionDeniedStatus: string;
+  permissionBlockedTitle: string;
+  permissionBlockedInstructions: string;
+  permissionGrantedStatus: string;
+  permissionUnsupportedNote: string;
+  dueAlertTitle: string;
+  dueAlertWithTime: (title: string, date: string, time: string) => string;
+  dueAlertDateOnly: (title: string, date: string) => string;
 }
 
 export interface AuthLocalization {
@@ -425,5 +454,37 @@ export const es = {
     timePeriodAria: 'Periodo (AM/PM)',
     clearTimeLabel: 'Limpiar hora',
     incompleteTimeError: 'Completa la hora, los minutos y el periodo (AM/PM), o limpia la hora.',
+  },
+  notifications: {
+    centerButtonLabel: 'Notificaciones',
+    centerButtonAria: (count: number) => `Abrir centro de notificaciones (${count} sin leer)`,
+    centerTitle: 'Centro de notificaciones',
+    emptyState: 'No tienes notificaciones en este momento.',
+    unreadBadge: 'Sin leer',
+    markAsReadButton: 'Marcar como leída',
+    markAsReadAria: 'Marcar notificación como leída',
+    markAllAsReadButton: 'Marcar todas como leídas',
+    markAllAsReadAria: 'Marcar todas las notificaciones como leídas',
+    deleteButton: 'Eliminar',
+    deleteAria: 'Eliminar notificación',
+    closeCenterAria: 'Cerrar centro de notificaciones',
+    permissionPromptTitle: 'Activa los avisos del navegador',
+    permissionPromptBody:
+      'Recibe alertas cuando tus tareas alcancen su fecha de caducidad, incluso si cambias de pestaña.',
+    enableNotificationsButton: 'Activar avisos',
+    dismissReminderButton: 'Ahora no',
+    permissionDefaultStatus: 'Avisos del navegador pendientes de activar',
+    permissionDeniedStatus: 'Avisos del navegador bloqueados',
+    permissionBlockedTitle: 'Notificaciones bloqueadas en este navegador',
+    permissionBlockedInstructions:
+      'Has bloqueado los avisos para este sitio. Para reactivarlos, abre el ícono de candado o configuración junto a la barra de direcciones del navegador, cambia Notificaciones a "Permitir" y recarga la página.',
+    permissionGrantedStatus: 'Avisos del navegador activados',
+    permissionUnsupportedNote:
+      'Este navegador no admite avisos emergentes; seguirás viendo todas tus alertas aquí.',
+    dueAlertTitle: 'Aviso de vencimiento',
+    dueAlertWithTime: (title: string, date: string, time: string) =>
+      `La tarea "${title}" vence el ${date} a las ${time}.`,
+    dueAlertDateOnly: (title: string, date: string) =>
+      `La tarea "${title}" vence el ${date}.`,
   },
 } as const satisfies LocalizationDictionary;
