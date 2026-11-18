@@ -43,7 +43,7 @@
   - **Done when:** New notification repository tests and existing `local-storage-auth-repositories.test.ts` pass cleanly.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Pure Browser Notification Adapter, 8-Hour Cooldown & Due-Alert Scheduler (`RF-27`, `RF-28`, `RNF-03`, `RNF-18`, `RNF-20`)**
+- [x] **T4: Pure Browser Notification Adapter, 8-Hour Cooldown & Due-Alert Scheduler (`RF-27`, `RF-28`, `RNF-03`, `RNF-18`, `RNF-20`)**
   - **Associated Requirements:** `REQ-NT-01`..`REQ-NT-11`, Section 4.2
   - **Files Touched:**
     - `tests/unit/features/notifications/permission-cooldown.test.ts` (created — tests for `isPermissionBannerDue` at `< 8h` / `=== 8h` / `> 8h` / `null` / corrupted ISO, `'granted'` / `'unsupported'` omission, and `BrowserNotificationAdapter` error handling)
