@@ -1,0 +1,173 @@
+# Tasks Checklist: 001-tasks (Golden Reference)
+
+- **Feature Name:** `001-tasks`
+- **Spec Reference:** [`docs/specs/001-tasks/spec.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/001-tasks/spec.md) (Status: `approved`)
+- **Plan Reference:** [`docs/specs/001-tasks/plan.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/001-tasks/plan.md)
+
+---
+
+## Task List
+
+- [x] **T1: Schema Updates & Spanish Localization Extension**
+  - **Associated Requirements:** `REQ-TK-01`, `REQ-TK-04`, `REQ-TK-05`, `REQ-TK-30`, `REQ-TK-32`, `AC-TK-01`, `AC-TK-06`
+  - **Files Touched:**
+    - `tests/unit/shared/schemas/limits.test.ts` (modified - add tests for task `tagIds` and seed group)
+    - `tests/unit/shared/i18n/es.test.ts` (modified - add tests for `es.tasks` namespace)
+    - `src/shared/schemas/task.ts` (modified - add `tagIds?: string[]` to `Task` and `tagIds` to `taskSchema`)
+    - `src/shared/schemas/group.ts` (modified - export `SEED_PERSONAL_GROUP`)
+    - `src/shared/i18n/es.ts` (modified - append `tasks` namespace and `TasksLocalization` type)
+  - **TDD Test First:** Unit tests in `limits.test.ts` testing `tagIds` validation in `taskSchema`, `SEED_PERSONAL_GROUP` validity, and `es.tasks` dictionary keys in `es.test.ts`.
+  - **Done when:** `taskSchema` accepts `tagIds?: string[]`, `SEED_PERSONAL_GROUP` validates against `groupSchema`, and `es.tasks` passes dictionary typechecks with 100% Spanish text.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T2: Deterministic Sorting Utility (`task-sort.ts`)**
+  - **Associated Requirements:** `REQ-TK-16`, `REQ-TK-17`, `RF-15`, `AC-TK-07`
+  - **Files Touched:**
+    - `tests/unit/features/tasks/task-sort.test.ts` (created)
+    - `src/features/tasks/utils/task-sort.ts` (created)
+    - `src/features/tasks/utils/index.ts` (created)
+  - **TDD Test First:** Create `tests/unit/features/tasks/task-sort.test.ts` testing:
+    - Dated tasks ordered by `dueDate` + `dueTime` ascending.
+    - Tasks on the same date: untimed tasks sort after timed tasks (treated as `23:59:59.999` end of day).
+    - Undated tasks positioned after all dated tasks, sorted by `createdAt` ascending.
+    - Deterministic tie-breaker by `id` ascending.
+    - Filters: `'pendientes'` returns only pending; `'completadas'` returns only completed; `'todas'` returns all pending followed by all completed at the bottom.
+  - **Done when:** `compareTasks` and `sortTasksByFilter` satisfy all sorting rules with 100% test coverage.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T3: Repositories & Data Access Layer (`TaskRepository`, `GroupRepository`, `TagRepository`)**
+  - **Associated Requirements:** `REQ-TK-02`, `REQ-TK-06`, `REQ-TK-08`, `REQ-TK-22`, `REQ-TK-30`, `REQ-TK-31`, `AC-TK-01`, `AC-TK-08`, `AC-TK-09`
+  - **Files Touched:**
+    - `tests/unit/data/local-storage-task-repository.test.ts` (created)
+    - `tests/unit/data/local-storage-group-repository.test.ts` (created)
+    - `tests/unit/data/local-storage-tag-repository.test.ts` (created)
+    - `src/data/contracts/task-repository.ts` (created)
+    - `src/data/contracts/group-repository.ts` (created)
+    - `src/data/contracts/tag-repository.ts` (created)
+    - `src/data/contracts/index.ts` (modified)
+    - `src/data/repositories/local-storage-task-repository.ts` (created)
+    - `src/data/repositories/local-storage-group-repository.ts` (created)
+    - `src/data/repositories/local-storage-tag-repository.ts` (created)
+    - `src/data/repositories/index.ts` (created)
+  - **TDD Test First:** Create unit tests in `local-storage-task-repository.test.ts`, `local-storage-group-repository.test.ts`, and `local-storage-tag-repository.test.ts` testing:
+    - Task CRUD and `getByGroupId`.
+    - Group repository auto-seeding of `SEED_PERSONAL_GROUP` when empty and `getIndividualGroups`.
+    - Tag repository case-insensitive lookup (`findByName`), tag creation (`ensureTag`), and deletion from group (`deleteFromGroup`).
+  - **Done when:** Repositories persist data via `LocalStorageAdapter` (`tbt:v1:*`), return `NotFoundError` on missing entities, and pass all repository unit tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T4: Task Form Validation Schema (`task-form-schema.ts`)**
+  - **Associated Requirements:** `REQ-TK-01`, `REQ-TK-04`, `REQ-TK-05`, `AC-TK-01`
+  - **Files Touched:**
+    - `tests/unit/features/tasks/task-form-schema.test.ts` (created)
+    - `src/features/tasks/schemas/task-form-schema.ts` (created)
+    - `src/features/tasks/schemas/index.ts` (created)
+  - **TDD Test First:** Create `tests/unit/features/tasks/task-form-schema.test.ts` testing:
+    - Title validation: reject < 2 or > 100 characters.
+    - Description validation: reject > 750 characters.
+    - Date format validation (`YYYY-MM-DD`).
+    - Due time dependency rule: reject `dueTime` if `dueDate` is missing or empty (`REQ-TK-04`).
+    - Tag names array validation.
+  - **Done when:** `taskFormSchema` produces structured errors with localized Spanish error messages.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T5: Zustand Feature Store (`tasks-store.ts`) & Custom Hooks**
+  - **Associated Requirements:** `REQ-TK-01`..`REQ-TK-03`, `REQ-TK-06`..`REQ-TK-10`, `REQ-TK-16`, `REQ-TK-17`, `REQ-TK-20`..`REQ-TK-23`, `REQ-TK-26`, `REQ-TK-30`, `AC-TK-01`..`AC-TK-04`, `AC-TK-08`..`AC-TK-10`
+  - **Files Touched:**
+    - `tests/unit/features/tasks/tasks-store.test.ts` (created)
+    - `src/features/tasks/store/tasks-store.ts` (created)
+    - `src/features/tasks/store/index.ts` (created)
+    - `src/features/tasks/hooks/use-tasks.ts` (created)
+    - `src/features/tasks/hooks/use-task-form.ts` (created)
+    - `src/features/tasks/hooks/use-task-move-copy.ts` (created)
+    - `src/features/tasks/hooks/index.ts` (created)
+  - **TDD Test First:** Create `tests/unit/features/tasks/tasks-store.test.ts` testing:
+    - Initialization provisioning `SEED_PERSONAL_GROUP` when storage is empty.
+    - `createTask` persisting task with `completed: false` and auto `createdAt`.
+    - `toggleTaskComplete` setting `completed: true` + `completedAt: ISO string`, unmarking clearing both.
+    - `moveTask` updating `groupId`, preserving `id` and original `createdAt`, and synchronizing tags by name.
+    - `copyTask` creating clone with new `id`, current `createdAt`, and synchronizing tags by name.
+    - `removeTagFromTask` dissociating tag from single task.
+    - `deleteTagFromGroup` deleting tag from group and clearing it from all group tasks.
+  - **Done when:** Store and custom hooks manage state immutably without manual `useMemo`/`useCallback` boilerplate (leveraging React Compiler).
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T6: Task Item & Visual Status Components (`TaskCard.tsx`, `TaskList.tsx`, `TaskFilterTabs.tsx`)**
+  - **Associated Requirements:** `REQ-TK-09`..`REQ-TK-15`, `REQ-TK-16`..`REQ-TK-18`, `REQ-TK-25`, `REQ-TK-27`..`REQ-TK-29`, `UI-01`, `UI-03`, `UI-04`, `RNF-12`, `AC-TK-04`..`AC-TK-07`
+  - **Files Touched:**
+    - `tests/integration/features/tasks/task-card.test.tsx` (created)
+    - `src/features/tasks/components/TaskCard.tsx` (created)
+    - `src/features/tasks/components/TaskList.tsx` (created)
+    - `src/features/tasks/components/TaskFilterTabs.tsx` (created)
+  - **TDD Test First:** Create `tests/integration/features/tasks/task-card.test.tsx` testing:
+    - Pending overdue task: renders red border/text and explicit text badge "Vencida" (`UI-04`, `RNF-12`).
+    - Completed task: renders strikethrough title.
+    - Completed overdue task: renders strikethrough only, no red, no "Vencida" badge (`REQ-TK-14`).
+    - Date-only task: not overdue before 23:59:59.999 local time, overdue after (`REQ-TK-12`).
+    - Tags: renders up to 5 chips + `"+N más"` overflow badge when > 5 tags (`REQ-TK-25`).
+    - Three-dots action menu with Spanish labels ("Editar", "Mover a…", "Copiar a…", "Eliminar") and keyboard accessibility.
+  - **Done when:** `TaskCard`, `TaskList`, and `TaskFilterTabs` render cleanly with 100% Spanish text and responsive Bootstrap styling.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T7: Task Creation, Editing & Tag Entry Modals (`TaskFormModal.tsx`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
+  - **Associated Requirements:** `REQ-TK-01`..`REQ-TK-07`, `REQ-TK-24`, `REQ-TK-24b`..`REQ-TK-24d`, `REQ-TK-26`, `AC-TK-01`..`AC-TK-03`, `AC-TK-10`
+  - **Files Touched:**
+    - `tests/integration/features/tasks/task-form-modal.test.tsx` (created)
+    - `src/features/tasks/components/TaskTagInput.tsx` (created)
+    - `src/features/tasks/components/TaskTagRemovalModal.tsx` (created)
+    - `src/features/tasks/components/TaskFormModal.tsx` (created)
+  - **TDD Test First:** Create `tests/integration/features/tasks/task-form-modal.test.tsx` testing:
+    - Tag chip creation on `;` or `,`.
+    - Tag autocomplete showing group tags and reusing duplicates without duplicate error.
+    - Due time field disabled when due date is empty.
+    - Form submission creating or editing task.
+    - Tag removal prompt offering "Solo de la tarea" vs "Del grupo".
+  - **Done when:** Modals support smooth keyboard navigation, visible focus, and clean validation error presentation.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T8: Move, Copy & Delete Modals (`TaskMoveCopyModal.tsx`, `TaskDeleteConfirmModal.tsx`)**
+  - **Associated Requirements:** `REQ-TK-07`, `REQ-TK-08`, `REQ-TK-18`, `REQ-TK-19`, `REQ-TK-19b`, `REQ-TK-20`..`REQ-TK-23`, `UI-06`, `AC-TK-03`, `AC-TK-08`, `AC-TK-09`
+  - **Files Touched:**
+    - `tests/integration/features/tasks/task-move-copy-modal.test.tsx` (created)
+    - `src/features/tasks/components/TaskMoveCopyModal.tsx` (created)
+    - `src/features/tasks/components/TaskDeleteConfirmModal.tsx` (created)
+  - **TDD Test First:** Create `tests/integration/features/tasks/task-move-copy-modal.test.tsx` testing:
+    - Move/Copy lists only the user's other individual groups (`id !== task.groupId`).
+    - When no other groups exist, displays informational message and disables confirm button (`REQ-TK-19b`).
+    - Moving reassigns `groupId` and preserves `createdAt`.
+    - Copying clones task with a new `id` and current `createdAt`.
+    - Delete modal displays warning of irreversible action (`UI-06`) and deletes task upon confirmation.
+  - **Done when:** Modals operate reliably, handle edge cases gracefully, and adhere to accessibility guidelines.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T9: Main Tasks View & Application Integration (`TasksView.tsx`, `src/App.tsx`, `src/main.tsx`)**
+  - **Associated Requirements:** `REQ-TK-27`, `UI-01`, `UI-07`, `Constitution Principles 1–6`, `AC-TK-11`
+  - **Files Touched:**
+    - `tests/integration/features/tasks/tasks-view.test.tsx` (created)
+    - `src/features/tasks/components/TasksView.tsx` (created)
+    - `src/features/tasks/components/index.ts` (created)
+    - `src/features/tasks/index.ts` (created)
+    - `src/main.tsx` (modified - import `bootstrap/dist/css/bootstrap.min.css`)
+    - `src/App.tsx` (modified - mount `TasksView`)
+  - **TDD Test First:** Create `tests/integration/features/tasks/tasks-view.test.tsx` testing end-to-end component rendering, group switching, filter tab navigation, and modal triggers.
+  - **Done when:** `App.tsx` renders the full Golden Reference task interface with responsive Bootstrap styling without runtime or console errors.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T10: Complete Verification Gates & Playwright E2E Test**
+  - **Associated Requirements:** `AC-TK-01` through `AC-TK-11`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
+  - **Files Touched:**
+    - `tests/e2e/tasks.spec.ts` (created)
+  - **TDD Test First:** Create `tests/e2e/tasks.spec.ts` with Playwright browser tests covering:
+    - App loads and initializes seed group.
+    - Creates a task with title and due date.
+    - Creates a past-due task and verifies the "Vencida" text badge and red styling render in browser.
+    - Marks task complete and verifies strikethrough styling and removal of overdue badge.
+    - Switches between "Pendientes", "Completadas", and "Todas" tabs.
+    - Opens three-dots menu and deletes task through confirmation modal.
+  - **Done when:**
+    - `npm run typecheck` (`tsc -b --noEmit`) passes with 0 errors.
+    - `npm run lint` (`eslint .`) passes with 0 errors and 0 warnings.
+    - `npm test` (`vitest run`) passes 100% of unit and integration tests.
+    - `npm run build` (`tsc -b && vite build`) generates production bundle.
+    - `npm run e2e` (`playwright test`) executes successfully against preview server.
+  - **Verification Command:** `npm run typecheck && npm run lint && npm test && npm run build && npm run e2e`

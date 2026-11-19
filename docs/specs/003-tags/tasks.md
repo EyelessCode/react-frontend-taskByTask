@@ -1,0 +1,125 @@
+# Tasks Checklist: 003-tags (Task Tags & Group-Scoped Tag Management)
+
+- **Feature Name:** `003-tags`
+- **Spec Reference:** [`docs/specs/003-tags/spec.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/003-tags/spec.md) (Status: `approved`)
+- **Plan Reference:** [`docs/specs/003-tags/plan.md`](file:///C:/Users/crist/Documentos/GitHub/PERSONAL/PROJECTS-FULLSTACK/TaskByTask/react-frontend-taskByTask/docs/specs/003-tags/plan.md)
+
+---
+
+## Task List
+
+- [x] **T1: Spanish Localization Extensions (`src/shared/i18n/es.ts`)**
+  - **Associated Requirements:** `REQ-TG-03`, `REQ-TG-16`, `REQ-TG-17`, `REQ-TG-21`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `RNF-14`, `AC-TG-07`, `AC-TG-08`, `AC-TG-12`
+  - **Files Touched:**
+    - `tests/unit/shared/i18n/es.test.ts` (modified - add unit tests verifying new tag accessibility, inline editing, and `UI-06` consequence strings)
+    - `src/shared/i18n/es.ts` (modified - extend `TasksLocalization`, add `TagsLocalization` / `es.tags` alias, and populate Spanish copy)
+  - **TDD Test First:** Update `tests/unit/shared/i18n/es.test.ts` to assert the presence and Spanish formatting of:
+    - `tagOverflowAria(count)`: returns `'{count} etiquetas adicionales ocultas. Edita la tarea para ver todas.'`
+    - `editTagAria(tagName)`: returns `'Editar etiqueta {tagName}'`
+    - `editingTagInputAria(tagName)`: returns `'Editando etiqueta {tagName}'`
+    - `editTagHint`: returns `'Haz clic o presiona Enter en una etiqueta para editarla en esta tarea'`
+    - `removeTagAria(tagName)`: returns `'Quitar etiqueta {tagName}'`
+    - `removeTagDescription`: returns `'Si eliges "Solo de la tarea", la etiqueta se conservará en el grupo. Si eliges "Del grupo", se eliminará permanentemente del grupo y de todas sus tareas.'`
+    - Verify `es.tags` exposes the complete tag localization contract while keeping all existing `es.tasks` keys intact.
+  - **Done when:** `src/shared/i18n/es.ts` compiles cleanly with strict TypeScript types and all localization unit tests pass.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T2: Pure Tag Domain Utilities (`src/features/tags/utils/tag-operations.ts`)**
+  - **Associated Requirements:** `REQ-TG-01`, `REQ-TG-02`, `REQ-TG-03`, `REQ-TG-04`, `REQ-TG-05`, `REQ-TG-06`, `REQ-TG-07`, `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-12`, `REQ-TG-13`, `REQ-TG-15`, `REQ-TG-16`, `REQ-TG-21`, `REQ-TG-23`, `AC-TG-01`..`AC-TG-06`, `AC-TG-10`
+  - **Files Touched:**
+    - `tests/unit/features/tags/tag-operations.test.ts` (created)
+    - `src/features/tags/utils/tag-operations.ts` (created)
+    - `src/features/tags/utils/index.ts` (created)
+  - **TDD Test First:** Create `tests/unit/features/tags/tag-operations.test.ts` testing:
+    - `normalizeTagName` and `resolveCanonicalTagName`: matches group tags case-insensitively and trimmed, returning canonical stored casing (`REQ-TG-09`).
+    - `captureTagSegments`: converts valid segments (`1..30` chars) into deduplicated chips, ignores empty/whitespace segments as no-ops (`REQ-TG-03`, `REQ-TG-06`), and rejects `> 30` char segments by returning `remainingInput` and the localized Spanish max-length validation message.
+    - `applyInlineTagEdit`:
+      - Strips pasted `;` or `,` characters (`REQ-TG-12`).
+      - Replaces chip at its exact original index when renamed to a valid non-duplicate name (`REQ-TG-12(1)`).
+      - Reuses canonical group tag casing on case-only edits (`"trabajo"` -> `"Trabajo"` when `"trabajo"` exists in group, `REQ-TG-09`).
+      - Deduplicates by keeping the existing chip's position and removing the edited duplicate when renamed to match another chip already on the task (`REQ-TG-10`, `REQ-TG-12(2)`).
+      - In `'commit'` mode (`Enter`, `,`, `;`) with `> 30` chars: returns `shouldExitEdit: false` and the localized max-length error (`REQ-TG-13(1)`).
+      - In `'blur'` mode with `> 30` chars, or in either mode with an empty string: cancels edit (`shouldExitEdit: true`, `validationError: null`) and restores original chips (`REQ-TG-13(2)`).
+    - `isTagPersistedOnTask`: returns `true` only when the chip name matches `persistedTagNames` case-insensitively (`REQ-TG-15`, `REQ-TG-16`).
+    - `filterTagSuggestions` and `resolveTaskTags`: filters group suggestions excluding already-selected tags (`REQ-TG-07`), and resolves `tagIds` while silently ignoring stale/unresolvable IDs (`REQ-TG-05`, `REQ-TG-23`).
+  - **Done when:** All pure tag utility functions in `tag-operations.ts` pass unit tests with 100% branch coverage.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T3: Multi-Group Tag Store Hydration & Non-Destructive Form Hook Resolution (`tasks-store.ts`, `use-task-form.ts`)**
+  - **Associated Requirements:** `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-14`, `REQ-TG-18`, `REQ-TG-19`, `REQ-TG-20`, `REQ-TG-23`, `REQ-TG-24`, `REQ-TG-25`, `AC-TG-03`, `AC-TG-04`, `AC-TG-05`, `AC-TG-07`, `AC-TG-09`, `AC-TG-11`
+  - **Files Touched:**
+    - `tests/unit/features/tasks/tasks-store.test.ts` (modified - add unit tests for multi-group `allTags` hydration, intra-task `tagIds` deduplication, and multi-group tag removal/update)
+    - `src/features/tasks/store/tasks-store.ts` (modified - maintain `allTags: Tag[]` alongside `tags: Tag[]`, deduplicate `tagIds` on create/update, and update `allTags` on create/update/move/copy/deleteTagFromGroup)
+    - `src/features/tasks/hooks/use-task-form.ts` (modified - resolve `groupTags` and `persistedTagNames` strictly for `task?.groupId ?? defaultGroupId ?? store.activeGroupId`, and prevent background `store.tags` updates from resetting an open form's unsaved edits)
+  - **TDD Test First:** Add unit tests in `tests/unit/features/tasks/tasks-store.test.ts` verifying:
+    - `init()`, `createTask()`, `updateTask()`, `moveTask()`, `copyTask()`, and `deleteTagFromGroup()` keep `allTags` synchronized across all groups while preserving `tags` for `activeGroupId`.
+    - `createTask` and `updateTask` deduplicate `tagIds` when case-insensitive duplicate tag names are supplied (`REQ-TG-09`, `REQ-TG-10`).
+    - Updating a task's tags in a non-active group updates `allTags` and preserves original tags in the group catalog for other tasks (`REQ-TG-14`, `REQ-TG-23`).
+  - **Done when:** `tasks-store.ts` and `use-task-form.ts` resolve group tags accurately for any group and preserve unsaved form edits during tag mutations, passing all unit tests.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T4: Tag Input Hook, Inline Chip Editing & Confirmation Modal (`use-tag-input.ts`, `TaskTagInput.tsx`, `TaskTagRemovalModal.tsx`)**
+  - **Associated Requirements:** `REQ-TG-03`, `REQ-TG-06`, `REQ-TG-06b`, `REQ-TG-07`, `REQ-TG-08`, `REQ-TG-09`, `REQ-TG-10`, `REQ-TG-11`, `REQ-TG-12`, `REQ-TG-12b`, `REQ-TG-13`, `REQ-TG-15`, `REQ-TG-16`, `REQ-TG-20`, `REQ-TG-26`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `AC-TG-01`..`AC-TG-07`, `AC-TG-12`
+  - **Files Touched:**
+    - `tests/integration/features/tags/task-tag-input.test.tsx` (created)
+    - `src/features/tags/hooks/use-tag-input.ts` (created)
+    - `src/features/tags/hooks/index.ts` (created)
+    - `src/features/tags/components/TaskTagInput.tsx` (created)
+    - `src/features/tags/components/TaskTagRemovalModal.tsx` (created)
+    - `src/features/tags/components/index.ts` (created)
+    - `src/features/tags/index.ts` (modified - export utils, hooks, and components)
+    - `src/features/tasks/components/TaskTagInput.tsx` (modified - re-export from `../../tags/components/TaskTagInput`)
+    - `src/features/tasks/components/TaskTagRemovalModal.tsx` (modified - re-export from `../../tags/components/TaskTagRemovalModal`)
+  - **TDD Test First:** Create `tests/integration/features/tags/task-tag-input.test.tsx` testing:
+    - Delimited capture via `;`, `,`, `Enter`, and pasted multi-tag string; empty delimiter press is a no-op (`AC-TG-01`).
+    - Typing `> 30` chars and pressing `;`, `,`, `Enter`, or blurring outside the composite control displays the Spanish max-length validation error and retains text (`REQ-TG-03`, `REQ-TG-06`, `REQ-TG-06b`).
+    - Composite blur boundary (`REQ-TG-06b`): moving focus from the tag input to an autocomplete suggestion button (`Tab` + `Enter` or pointer click) does **not** prematurely convert the partial query into a chip, whereas blurring outside the container auto-converts valid `1..30` char text.
+    - Inline chip editing (`REQ-TG-11`..`REQ-TG-13`, `AC-TG-05`): activating a chip via click, `Enter`, or `Space` opens an inline input (`aria-label="Editando etiqueta ..."`); confirming via `Enter`, `,`, `;`, or blur updates the chip in place (or deduplicates); pressing `Enter` with `> 30` chars shows validation error; pressing `Escape` or blurring empty/`> 30` chars restores the original chip.
+    - Persisted vs. session chip removal (`REQ-TG-15`, `REQ-TG-16`, `AC-TG-06`, `AC-TG-07`): clicking `×` on an unsaved or inline-rewritten chip removes it immediately via `onChange`, whereas clicking `×` on a chip in `persistedTagNames` triggers `onRemoveRequest(tagName)`.
+    - `TaskTagRemovalModal` renders `es.tasks.removeTagDescription` consequence warning (`UI-06`).
+  - **Done when:** `src/features/tags/` components and hooks pass all new and existing integration tests (`task-form-modal.test.tsx` and `task-tag-input.test.tsx`).
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T5: End-to-End Tag Integration Across Task Cards, Task Form Modal, and Groups Grid View (`TaskCard.tsx`, `TaskList.tsx`, `TaskFormModal.tsx`, `TasksView.tsx`, `GroupCard.tsx`, `GroupsGridView.tsx`)**
+  - **Associated Requirements:** `REQ-TG-06b`, `REQ-TG-12b`, `REQ-TG-14`, `REQ-TG-16`, `REQ-TG-17`, `REQ-TG-18`, `REQ-TG-19`, `REQ-TG-20`, `REQ-TG-21`, `REQ-TG-22`, `REQ-TG-23`, `REQ-TG-26`, `REQ-TG-27`, `UI-01`, `UI-06`, `RNF-12`, `AC-TG-05`, `AC-TG-07`..`AC-TG-12`
+  - **Files Touched:**
+    - `tests/integration/features/tasks/task-card.test.tsx` (modified - verify per-chip remove button trigger and non-interactive `"+N más"` badge `aria-label`)
+    - `tests/integration/features/tags/tag-removal-flows.test.tsx` (created)
+    - `src/features/tasks/components/TaskCard.tsx` (modified - add `onRemoveTag?: (task: Task, tag: Tag) => void`, chip remove button, and `tagOverflowAria` on `"+N más"` badge)
+    - `src/features/tasks/components/TaskList.tsx` (modified - forward `onRemoveTag` to `TaskCard`)
+    - `src/features/tasks/components/TaskFormModal.tsx` (modified - wire `TaskTagInput` handle for pre-submit pending input commit, pass `persistedTagNames` and `onRemoveRequest`, render stacked `TaskTagRemovalModal` for persisted tags, preserve unsaved form fields on confirm, and return focus)
+    - `src/features/tasks/components/TasksView.tsx` (modified - wire `onRemoveTag` on `TaskList`)
+    - `src/features/groups/components/GroupCard.tsx` (modified - forward `onRemoveTag` to `TaskCard`)
+    - `src/features/groups/components/GroupsGridView.tsx` (modified - wire `onRemoveTag` on `GroupCard` to open `TaskTagRemovalModal` and wire `onTagMutated` on `TaskFormModal`)
+  - **TDD Test First:** Create `tests/integration/features/tags/tag-removal-flows.test.tsx` and update `task-card.test.tsx` testing:
+    - Clicking `×` (`Quitar etiqueta ...`) on a `TaskCard` chip in `GroupsGridView` opens `TaskTagRemovalModal`; confirming "Solo de la tarea" removes the tag from that task only while keeping it in group suggestions; confirming "Del grupo" removes it from all tasks in the group (`AC-TG-08`, `AC-TG-09`).
+    - In `TaskFormModal` (edit mode): modifying `title`, adding a new session tag chip, and then clicking `×` on a persisted tag chip opens `TaskTagRemovalModal`; confirming "Solo de la tarea" or "Del grupo" removes only the target persisted tag while **preserving** the modified `title` and the unsaved session tag chip, and keeps the removal persisted even if the user subsequently clicks "Cancelar" on `TaskFormModal` (`REQ-TG-18(2)`, `REQ-TG-19(2)`, `REQ-TG-20`, `AC-TG-07`).
+    - Submitting `TaskFormModal` ("Guardar") with valid unconfirmed text in the tag input auto-captures the tag; submitting with `> 30` char unconfirmed text blocks submission and shows the validation error (`REQ-TG-06b`).
+    - Editing a task in a secondary group card in `GroupsGridView` resolves that group's tags and suggestions accurately (`REQ-TG-23`, `AC-TG-11`).
+  - **Done when:** All unit and integration tests across `tasks`, `groups`, and `tags` pass with zero errors.
+  - **Verification Command:** `npm test && npm run typecheck && npm run lint`
+
+- [x] **T6: Complete Verification Gates, Playwright E2E Suite (`tags.spec.ts`), and Spec/Memory Finalization**
+  - **Associated Requirements:** `AC-TG-01` through `AC-TG-12`, `RNF-01`, `RNF-15`, `Constitution Principle 6`
+  - **Files Touched:**
+    - `tests/e2e/tags.spec.ts` (created)
+    - `tests/e2e/tasks.spec.ts` (verified regression-free)
+    - `tests/e2e/groups.spec.ts` (verified regression-free)
+    - `docs/specs/003-tags/spec.md` (modified - update `Status: implemented`)
+    - `MEMORY.md` (modified - record `003-tags` implementation, verification stats, and learnings)
+  - **TDD Test First:** Create `tests/e2e/tags.spec.ts` with Playwright browser tests covering:
+    - Creating a task with tags via `;` and `,` delimiters and composite blur auto-capture (`AC-TG-01`).
+    - Autocomplete suggestion selection and case-insensitive duplicate reuse (`AC-TG-02`, `AC-TG-03`).
+    - Inline tag editing on a task ("Editar desde una tarea") replacing the tag only on that task while another task in the group retains the original tag (`AC-TG-05`).
+    - Removing a tag directly from a `TaskCard` via "Solo de la tarea" (confirming persistence in group suggestions, `AC-TG-04`, `AC-TG-08`, `AC-TG-09`).
+    - Removing a persisted tag inside `TaskFormModal` via "Del grupo" while preserving unsaved title edits, verifying the tag disappears from all tasks in the group (`AC-TG-07`, `AC-TG-09`).
+    - Creating a task with > 5 tags (`6` tags), verifying 5 chips + `"+1 más"` badge on the card, and opening edit view to see/edit all 6 tags (`AC-TG-10`).
+    - Multi-group tag isolation across "Personal" and a second group (`AC-TG-11`).
+  - **Done when:**
+    - `npm run typecheck` (`tsc -b --noEmit`) passes with 0 errors.
+    - `npm run lint` (`eslint .`) passes with 0 errors and 0 warnings.
+    - `npm test` (`vitest run`) passes 100% of unit and integration tests.
+    - `npm run build` (`tsc -b && vite build`) succeeds cleanly.
+    - `npm run e2e` (`playwright test`) passes `tasks.spec.ts`, `groups.spec.ts`, and `tags.spec.ts` with 0 console errors.
+    - `docs/specs/003-tags/spec.md` is marked `Status: implemented` and `MEMORY.md` is updated.
+  - **Verification Command:** `npm run typecheck && npm run lint && npm test && npm run build && npm run e2e`
