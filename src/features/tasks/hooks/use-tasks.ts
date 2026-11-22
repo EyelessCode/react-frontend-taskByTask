@@ -32,6 +32,8 @@ export function useTasks() {
     setActiveFilter: store.setActiveFilter,
     openModal: store.openModal,
     closeModal: store.closeModal,
+    loadGroupTags: store.loadGroupTags,
+    getTaskById: store.getTaskById,
     createTask: store.createTask,
     updateTask: store.updateTask,
     deleteTask: store.deleteTask,

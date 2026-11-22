@@ -88,7 +88,7 @@
   - **Done when:** All auth UI tests (new and existing) pass with full keyboard/ARIA accessibility and zero console warnings.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T7: Dual-Mode `useGroupsStore`, `useTasksStore` & Hooks — Keyset Pagination, Server Filters & Task/Tag Mutations (`RF-06`, `RF-07`, `RF-12`..`RF-16`, `RF-22`, `RF-24`, `RF-25`, `RNF-04`, `RNF-16`, `RNF-18`, `RNF-20`)**
+- [x] **T7: Dual-Mode `useGroupsStore`, `useTasksStore` & Hooks — Keyset Pagination, Server Filters & Task/Tag Mutations (`RF-06`, `RF-07`, `RF-12`..`RF-16`, `RF-22`, `RF-24`, `RF-25`, `RNF-04`, `RNF-16`, `RNF-18`, `RNF-20`)**
   - **Associated Requirements:** `REQ-BI-09`, `REQ-BI-15`, `REQ-BI-16`, `REQ-BI-17`, `REQ-BI-18`, `REQ-BI-23`, `AC-BI-06`, `AC-BI-07`
   - **Files Touched:**
     - `tests/unit/features/groups/groups-tasks-api-store.test.ts` (created — comprehensive `api`-mode store tests: paginated groups + `"Cargar más grupos"` deduplication & newly created group insertion, per-group `GET /api/v1/groups/{groupId}/tasks` pagination, cross-group `GET /api/v1/tasks` search verification, debounced search + stale-response discard, status/group filter delegation, task create/partial-PATCH-with-nulls/completion/move/copy/delete, tag list/search/detach/group-delete, `403`/`404`/`409` controlled reconciliation, and zero client-side Personal self-healing in `api` mode)
