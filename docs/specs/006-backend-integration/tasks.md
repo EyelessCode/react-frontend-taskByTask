@@ -101,7 +101,7 @@
   - **Done when:** All new API-mode group/task/tag store tests and all existing `localStorage` store tests pass cleanly.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T8: Workspace UI Integration — Progressive `"Cargar más"`, `N+`/Active-Tab Counts, Authoritative `overdue` & RFC 7807 Modal Errors (`RF-14`, `RF-16`, `RF-24`, `RF-25`, `UI-01`, `UI-02`, `RNF-04`, `RNF-12`, `RNF-14`)**
+- [x] **T8: Workspace UI Integration — Progressive `"Cargar más"`, `N+`/Active-Tab Counts, Authoritative `overdue` & RFC 7807 Modal Errors (`RF-14`, `RF-16`, `RF-24`, `RF-25`, `UI-01`, `UI-02`, `RNF-04`, `RNF-12`, `RNF-14`)**
   - **Associated Requirements:** `REQ-BI-06`, `REQ-BI-09`, `REQ-BI-15(2)-(3)`, `REQ-BI-16(1)-(3)`, `REQ-BI-17(7)`, `REQ-BI-23`, `REQ-BI-24`, `AC-BI-06`, `AC-BI-07`, `AC-BI-10`
   - **Files Touched:**
     - `tests/unit/features/groups/workspace-pagination-ui.test.tsx` (created — RTL unit tests for `GroupCard` `"Cargar más tareas"` & `N+ tareas` badge, `GroupsFilterToolbar` active-tab-only counts & `"Cargar más grupos"`, `TaskCard` server-authoritative `overdue` for incomplete tasks & strikethrough-only for completed tasks, `TaskMoveCopyModal` `"Cargar más grupos"` suppressing `noOtherGroups` + same-group copy in `api` mode, and `GroupFormModal`/`TaskFormModal` RFC 7807 error display)

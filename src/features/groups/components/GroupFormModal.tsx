@@ -1,6 +1,7 @@
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import Alert from 'react-bootstrap/Alert';
 import { useGroupForm } from '../hooks/use-group-form';
 import type { Group } from '../../../shared/schemas';
 import { es } from '../../../shared/i18n';
@@ -18,7 +19,7 @@ export function GroupFormModal({
   onClose,
   onSuccess,
 }: GroupFormModalProps) {
-  const { form, isEdit, onSubmit } = useGroupForm({
+  const { form, isEdit, onSubmit, apiError } = useGroupForm({
     group,
     onSuccess: () => {
       onSuccess?.();
@@ -36,6 +37,11 @@ export function GroupFormModal({
         </Modal.Header>
 
         <Modal.Body>
+          {apiError && (
+            <Alert variant="danger" role="alert" className="py-2 small">
+              {apiError}
+            </Alert>
+          )}
           <Form.Group className="mb-3">
             <Form.Label htmlFor="group-name-input">
               {es.groups.nameLabel}
