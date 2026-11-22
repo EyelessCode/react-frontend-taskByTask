@@ -25,7 +25,7 @@
   - **Done when:** Default mode resolves to `'localStorage'`, invalid mode throws `ConfigurationError`, Vite proxy is configured, and all unit tests + typecheck + lint pass with zero regressions.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T2: Native HTTP Client (`credentials: "include"`), CSRF Manager & RFC 7807 Problem Detail Parser (`RNF-06`, `RNF-07`, `RNF-08`, `RNF-09`, `RNF-18`)**
+- [x] **T2: Native HTTP Client (`credentials: "include"`), CSRF Manager & RFC 7807 Problem Detail Parser (`RNF-06`, `RNF-07`, `RNF-08`, `RNF-09`, `RNF-18`)**
   - **Associated Requirements:** `REQ-BI-02`, `REQ-BI-03`, `REQ-BI-04`, `REQ-BI-05`, `REQ-BI-06`, `REQ-BI-07`, `REQ-BI-08`, `REQ-BI-09`, `AC-BI-02`, `AC-BI-03`, `AC-BI-04`
   - **Files Touched:**
     - `tests/unit/data/api/http-client.test.ts` (created — unit tests for `credentials: "include"`, query serialization with repeated `groupIds`, single-flight `GET /api/v1/auth/csrf` bootstrap & `X-XSRF-TOKEN` injection on mutations, CSRF invalidation, deterministic single-retry on first-attempt `403` and stop on second `403`, RFC 7807 `400` `invalidParams` parsing, `429` positive/zero/missing `retryAfterSeconds` formatting for `'login'` vs `'generic'`, context-aware `401` (`session-probe`, `login`, `authenticated`, `logout`), `404`/`409`/`5xx`/network errors, and Zod inbound validation failure -> `errors.invalidResponse`)
