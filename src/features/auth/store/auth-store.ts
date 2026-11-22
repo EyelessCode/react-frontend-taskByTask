@@ -51,6 +51,7 @@ import {
   type RecoverFormValues,
   type RegisterFormValues,
 } from '../schemas';
+import { createWebPushAdapter } from '../../notifications/utils/web-push';
 import {
   buildRecoveryCodeRecords,
   evaluateNextLockoutState,
@@ -160,7 +161,12 @@ function detectBrowserTimeZone(): string {
 }
 
 function createDefaultDependencies(): AuthStoreDependencies {
+  const webPush = createWebPushAdapter();
   return {
+    getPushEndpoint: () => webPush.getActiveEndpoint(),
+    unsubscribeLocalPush: async () => {
+      await webPush.unsubscribeLocal();
+    },
     userRepository: new LocalStorageUserRepository(),
     sessionRepository: new LocalStorageSessionRepository(),
     recoveryCodeRepository: new LocalStorageRecoveryCodeRepository(),

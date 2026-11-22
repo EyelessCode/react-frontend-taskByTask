@@ -116,7 +116,7 @@
   - **Done when:** All new and existing workspace UI tests pass cleanly with full keyboard/ARIA accessibility.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T9: Web Push Service Worker (`public/sw.js`), `WebPushAdapter` & Dual-Mode `useNotificationsStore` (`RF-02`, `RF-05`, `RF-27`..`RF-29`, `RNF-04`, `RNF-15`, `RNF-18`)**
+- [x] **T9: Web Push Service Worker (`public/sw.js`), `WebPushAdapter` & Dual-Mode `useNotificationsStore` (`RF-02`, `RF-05`, `RF-27`..`RF-29`, `RNF-04`, `RNF-15`, `RNF-18`)**
   - **Associated Requirements:** `REQ-BI-19`, `REQ-BI-20`, `REQ-BI-21`, `REQ-BI-22`, `REQ-BI-23`, `AC-BI-08`, `AC-BI-09`
   - **Files Touched:**
     - `tests/unit/features/notifications/web-push.test.ts` (created — unit tests for `urlBase64ToUint8Array`, `extractPushSubscriptionPayload`, `parsePushNotificationPayload` across JSON / plain text / empty / malformed JSON / unsafe URL rejection, and `WebPushAdapter` subscribe/unsubscribe/unsupported error safety)
