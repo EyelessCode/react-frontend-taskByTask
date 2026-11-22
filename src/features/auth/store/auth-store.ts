@@ -1,5 +1,11 @@
 import { create } from 'zustand';
+import {
+  extractFieldErrorMap,
+  getApiServices,
+  registerUnauthorizedHandler,
+} from '../../../data/api';
 import type {
+  AuthApiClient,
   GroupRepository,
   LoginLockoutRepository,
   NotificationRepository,
@@ -21,7 +27,14 @@ import {
   LocalStorageTaskRepository,
   LocalStorageUserRepository,
 } from '../../../data/repositories';
-import { BusinessRuleViolationError } from '../../../shared/errors';
+import { getPersistenceConfig, type PersistenceMode } from '../../../shared/config';
+import {
+  ApiProblemError,
+  BusinessRuleViolationError,
+  NetworkError,
+  RateLimitError,
+  UnauthorizedError,
+} from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
 import { LIMITS, type Session, type User } from '../../../shared/schemas';
 import {
@@ -47,7 +60,8 @@ import {
   hashPassword,
   isLockedOut,
   normalizeEmail,
-  normalizeRecoveryCode,
+  normalizeRecoveryCodeForApi,
+  normalizeRecoveryCodeForLocalStorage,
   verifyPassword,
   type CryptoProvider,
 } from '../utils';
@@ -87,13 +101,15 @@ export interface AuthState {
   isInitialized: boolean;
   isSubmitting: boolean;
   authError: string | null;
+  fieldErrors: Record<string, string>;
   loginNotice: string | null;
   oneTimeRecoveryCodes: string[] | null;
+  oneTimeRecoveryCodesNotice: string | null;
   postRegisterCodesPending: boolean;
 }
 
 export interface AuthActions {
-  validateSession: () => Promise<ValidateSessionResult>;
+  validateSession: (options?: { force?: boolean }) => Promise<ValidateSessionResult>;
   ensureActiveUserId: () => Promise<string | null>;
   register: (values: RegisterFormValues) => Promise<boolean>;
   login: (values: LoginFormValues) => Promise<boolean>;
@@ -103,6 +119,7 @@ export interface AuthActions {
   changePassword: (values: ChangePasswordFormValues) => Promise<boolean>;
   regenerateRecoveryCodes: (values: CurrentPasswordConfirmValues) => Promise<boolean>;
   deleteAccount: (values: CurrentPasswordConfirmValues) => Promise<boolean>;
+  handleMidSessionUnauthorized: () => Promise<void>;
   acknowledgeRegistrationCodes: () => void;
   dismissOneTimeRecoveryCodes: () => void;
   clearAuthError: () => void;
@@ -112,6 +129,10 @@ export interface AuthActions {
 export type AuthStore = AuthState & AuthActions;
 
 export interface AuthStoreDependencies {
+  mode?: PersistenceMode;
+  authApi?: AuthApiClient;
+  getPushEndpoint?: () => Promise<string | null>;
+  unsubscribeLocalPush?: () => Promise<void>;
   userRepository: UserRepository;
   sessionRepository: SessionRepository;
   recoveryCodeRepository: RecoveryCodeRepository;
@@ -157,9 +178,32 @@ function createDefaultDependencies(): AuthStoreDependencies {
 }
 
 let deps: AuthStoreDependencies = createDefaultDependencies();
+let unauthorizedInFlight: Promise<void> | null = null;
 
 export function configureAuthStore(overrides: Partial<AuthStoreDependencies>): void {
   deps = { ...deps, ...overrides };
+}
+
+function resolveMode(): PersistenceMode {
+  return deps.mode ?? getPersistenceConfig().mode;
+}
+
+function resolveAuthApi(): AuthApiClient {
+  return deps.authApi ?? getApiServices().authApi;
+}
+
+function resolveApiErrorMessage(error: unknown): string {
+  if (error instanceof ApiProblemError) {
+    return error.detail?.trim() || error.message;
+  }
+  if (
+    error instanceof RateLimitError ||
+    error instanceof NetworkError ||
+    error instanceof UnauthorizedError
+  ) {
+    return error.message;
+  }
+  return es.errors.unexpected;
 }
 
 const initialAuthState: AuthState = {
@@ -168,8 +212,10 @@ const initialAuthState: AuthState = {
   isInitialized: false,
   isSubmitting: false,
   authError: null,
+  fieldErrors: {},
   loginNotice: null,
   oneTimeRecoveryCodes: null,
+  oneTimeRecoveryCodesNotice: null,
   postRegisterCodesPending: false,
 };
 
@@ -185,7 +231,95 @@ function createSessionRecord(userId: string, nowMs: number): Session {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialAuthState,
 
-  validateSession: async (): Promise<ValidateSessionResult> => {
+  handleMidSessionUnauthorized: async (): Promise<void> => {
+    if (unauthorizedInFlight !== null) {
+      return unauthorizedInFlight;
+    }
+    if (!get().isAuthenticated && get().currentUser === null) {
+      return;
+    }
+
+    unauthorizedInFlight = (async () => {
+      try {
+        await deps.unsubscribeLocalPush?.();
+      } catch {
+        // Best-effort local Web Push cleanup
+      }
+
+      resolveAuthApi().invalidateCsrf();
+      set({
+        currentUser: null,
+        isAuthenticated: false,
+        isInitialized: true,
+        isSubmitting: false,
+        authError: null,
+        fieldErrors: {},
+        loginNotice: es.auth.sessionExpired,
+        oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
+        postRegisterCodesPending: false,
+      });
+      emitSessionEnd('expired');
+    })().finally(() => {
+      unauthorizedInFlight = null;
+    });
+
+    return unauthorizedInFlight;
+  },
+
+  validateSession: async (options?: { force?: boolean }): Promise<ValidateSessionResult> => {
+    if (resolveMode() === 'api') {
+      const state = get();
+      if (
+        !options?.force &&
+        state.isInitialized &&
+        state.isAuthenticated &&
+        state.currentUser !== null
+      ) {
+        return { authenticated: true, userId: state.currentUser.id };
+      }
+
+      const wasAuthenticated = state.isAuthenticated;
+      try {
+        const user = await resolveAuthApi().getMe(
+          wasAuthenticated ? 'authenticated' : 'session-probe',
+        );
+        set({
+          currentUser: user,
+          isAuthenticated: true,
+          isInitialized: true,
+          authError: null,
+        });
+        return { authenticated: true, userId: user.id };
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          if (wasAuthenticated) {
+            return { authenticated: false, userId: null, reason: 'expired' };
+          }
+          set({
+            currentUser: null,
+            isAuthenticated: false,
+            isInitialized: true,
+            oneTimeRecoveryCodes: null,
+            oneTimeRecoveryCodesNotice: null,
+            postRegisterCodesPending: false,
+          });
+          return { authenticated: false, userId: null, reason: 'none' };
+        }
+
+        set({
+          currentUser: null,
+          isAuthenticated: false,
+          isInitialized: true,
+          authError: resolveApiErrorMessage(error),
+          oneTimeRecoveryCodes: null,
+          oneTimeRecoveryCodesNotice: null,
+          postRegisterCodesPending: false,
+        });
+        return { authenticated: false, userId: null, reason: 'none' };
+      }
+    }
+
     const session = await deps.sessionRepository.get();
     if (!session) {
       set({
@@ -193,6 +327,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: false,
         isInitialized: true,
         oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
         postRegisterCodesPending: false,
       });
       return { authenticated: false, userId: null, reason: 'none' };
@@ -205,6 +340,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: false,
         isInitialized: true,
         oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
         postRegisterCodesPending: false,
         loginNotice: es.auth.sessionExpired,
       });
@@ -220,6 +356,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: false,
         isInitialized: true,
         oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
         postRegisterCodesPending: false,
         loginNotice: null,
       });
@@ -241,7 +378,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   register: async (values: RegisterFormValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const parsed = registerFormSchema.safeParse(values);
     if (!parsed.success) {
@@ -253,6 +390,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     const data = parsed.data;
+
+    if (resolveMode() === 'api') {
+      try {
+        const result = await resolveAuthApi().register({
+          email: data.email,
+          username: data.username,
+          displayName: data.displayName,
+          password: data.password,
+          timezone: deps.getTimeZone(),
+        });
+        set({
+          currentUser: result.user,
+          isAuthenticated: true,
+          isInitialized: true,
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+          loginNotice: null,
+          oneTimeRecoveryCodes: result.recoveryCodes,
+          oneTimeRecoveryCodesNotice: result.recoveryCodesNotice,
+          postRegisterCodesPending: true,
+        });
+        return true;
+      } catch (error) {
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
+    }
+
     if (await deps.userRepository.getByEmail(data.email)) {
       set({ isSubmitting: false, authError: es.auth.emailAlreadyExists });
       return false;
@@ -299,15 +469,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isInitialized: true,
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
       loginNotice: null,
       oneTimeRecoveryCodes: plainCodes,
+      oneTimeRecoveryCodesNotice: null,
       postRegisterCodesPending: true,
     });
     return true;
   },
 
   login: async (values: LoginFormValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const parsed = loginFormSchema.safeParse(values);
     if (!parsed.success) {
@@ -316,6 +488,36 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         authError: parsed.error.issues[0]?.message ?? es.errors.unexpected,
       });
       return false;
+    }
+
+    if (resolveMode() === 'api') {
+      try {
+        const user = await resolveAuthApi().login({
+          email: parsed.data.email,
+          password: parsed.data.password,
+          timezone: deps.getTimeZone(),
+        });
+        set({
+          currentUser: user,
+          isAuthenticated: true,
+          isInitialized: true,
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+          loginNotice: null,
+          oneTimeRecoveryCodes: null,
+          oneTimeRecoveryCodesNotice: null,
+          postRegisterCodesPending: false,
+        });
+        return true;
+      } catch (error) {
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
     }
 
     const nowMs = deps.now();
@@ -362,29 +564,70 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isInitialized: true,
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
       loginNotice: null,
       oneTimeRecoveryCodes: null,
+      oneTimeRecoveryCodesNotice: null,
       postRegisterCodesPending: false,
     });
     return true;
   },
 
   logout: async (): Promise<void> => {
+    if (resolveMode() === 'api') {
+      let endpoint: string | null = null;
+      try {
+        endpoint = (await deps.getPushEndpoint?.()) ?? null;
+      } catch {
+        // Best-effort endpoint lookup
+      }
+
+      try {
+        await resolveAuthApi().logout(endpoint);
+      } catch {
+        // Complete local cleanup cleanly even on 401 or transient transport error (REQ-BI-12(2))
+      }
+
+      try {
+        await deps.unsubscribeLocalPush?.();
+      } catch {
+        // Best-effort local push unsubscribe
+      }
+
+      resolveAuthApi().invalidateCsrf();
+      set({
+        currentUser: null,
+        isAuthenticated: false,
+        isInitialized: true,
+        isSubmitting: false,
+        authError: null,
+        fieldErrors: {},
+        loginNotice: null,
+        oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
+        postRegisterCodesPending: false,
+      });
+      emitSessionEnd('logout');
+      return;
+    }
+
     await deps.sessionRepository.clear();
     set({
       currentUser: null,
       isAuthenticated: false,
       isInitialized: true,
       authError: null,
+      fieldErrors: {},
       loginNotice: null,
       oneTimeRecoveryCodes: null,
+      oneTimeRecoveryCodesNotice: null,
       postRegisterCodesPending: false,
     });
     emitSessionEnd('logout');
   },
 
   recoverPassword: async (values: RecoverFormValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const parsed = recoverFormSchema.safeParse(values);
     if (!parsed.success) {
@@ -395,6 +638,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
+    if (resolveMode() === 'api') {
+      try {
+        const message = await resolveAuthApi().recoverPassword({
+          email: parsed.data.email,
+          recoveryCode: normalizeRecoveryCodeForApi(parsed.data.recoveryCode),
+          newPassword: parsed.data.newPassword,
+        });
+        set({
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+          loginNotice: message || es.auth.recoverSuccess,
+        });
+        return true;
+      } catch (error) {
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
+    }
+
     const normalizedEmail = normalizeEmail(parsed.data.email);
     const user = await deps.userRepository.getByEmail(normalizedEmail);
     if (!user) {
@@ -403,7 +670,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     const codes = await deps.recoveryCodeRepository.getByUserId(user.id);
-    const normalizedCode = normalizeRecoveryCode(parsed.data.recoveryCode);
+    const normalizedCode = normalizeRecoveryCodeForLocalStorage(parsed.data.recoveryCode);
     const matchingCode = codes.find((code) => !code.used && code.code === normalizedCode);
 
     if (!matchingCode) {
@@ -428,13 +695,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
       loginNotice: es.auth.recoverSuccess,
     });
     return true;
   },
 
   updateProfile: async (values: ProfileFormValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const activeUserId = await get().ensureActiveUserId();
     if (!activeUserId) {
@@ -449,6 +717,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         authError: parsed.error.issues[0]?.message ?? es.errors.unexpected,
       });
       return false;
+    }
+
+    if (resolveMode() === 'api') {
+      try {
+        const updatedUser = await resolveAuthApi().updateProfile({
+          displayName: parsed.data.displayName,
+          username: parsed.data.username,
+          email: parsed.data.email,
+          timeFormat: parsed.data.timeFormat,
+        });
+        set({
+          currentUser: updatedUser,
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          set({ isSubmitting: false });
+          return false;
+        }
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
     }
 
     const existingUser = await deps.userRepository.getById(activeUserId);
@@ -483,12 +780,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       currentUser: updatedUser,
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
     });
     return true;
   },
 
   changePassword: async (values: ChangePasswordFormValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const activeUserId = await get().ensureActiveUserId();
     if (!activeUserId) {
@@ -503,6 +801,32 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         authError: parsed.error.issues[0]?.message ?? es.errors.unexpected,
       });
       return false;
+    }
+
+    if (resolveMode() === 'api') {
+      try {
+        await resolveAuthApi().changePassword({
+          currentPassword: parsed.data.currentPassword,
+          newPassword: parsed.data.newPassword,
+        });
+        set({
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          set({ isSubmitting: false });
+          return false;
+        }
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
     }
 
     const user = await deps.userRepository.getById(activeUserId);
@@ -542,12 +866,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       currentUser: updatedUser,
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
     });
     return true;
   },
 
   regenerateRecoveryCodes: async (values: CurrentPasswordConfirmValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const activeUserId = await get().ensureActiveUserId();
     if (!activeUserId) {
@@ -562,6 +887,40 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         authError: parsed.error.issues[0]?.message ?? es.errors.unexpected,
       });
       return false;
+    }
+
+    if (resolveMode() === 'api') {
+      try {
+        const result = await resolveAuthApi().regenerateRecoveryCodes({
+          currentPassword: parsed.data.currentPassword,
+        });
+        const existingUser = get().currentUser;
+        set({
+          currentUser: existingUser
+            ? {
+                ...existingUser,
+                remainingRecoveryCodes: result.recoveryCodes.length,
+              }
+            : null,
+          isSubmitting: false,
+          authError: null,
+          fieldErrors: {},
+          oneTimeRecoveryCodes: result.recoveryCodes,
+          oneTimeRecoveryCodesNotice: result.recoveryCodesNotice,
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          set({ isSubmitting: false });
+          return false;
+        }
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
     }
 
     const user = await deps.userRepository.getById(activeUserId);
@@ -589,13 +948,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
       oneTimeRecoveryCodes: plainCodes,
+      oneTimeRecoveryCodesNotice: null,
     });
     return true;
   },
 
   deleteAccount: async (values: CurrentPasswordConfirmValues): Promise<boolean> => {
-    set({ isSubmitting: true, authError: null });
+    set({ isSubmitting: true, authError: null, fieldErrors: {} });
 
     const activeUserId = await get().ensureActiveUserId();
     if (!activeUserId) {
@@ -610,6 +971,47 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         authError: parsed.error.issues[0]?.message ?? es.errors.unexpected,
       });
       return false;
+    }
+
+    if (resolveMode() === 'api') {
+      try {
+        await resolveAuthApi().deleteAccount({
+          password: parsed.data.currentPassword,
+        });
+      } catch (error) {
+        if (error instanceof UnauthorizedError) {
+          set({ isSubmitting: false });
+          return false;
+        }
+        set({
+          isSubmitting: false,
+          authError: resolveApiErrorMessage(error),
+          fieldErrors: extractFieldErrorMap(error),
+        });
+        return false;
+      }
+
+      try {
+        await deps.unsubscribeLocalPush?.();
+      } catch {
+        // Best-effort local push unsubscribe
+      }
+
+      resolveAuthApi().invalidateCsrf();
+      set({
+        currentUser: null,
+        isAuthenticated: false,
+        isInitialized: true,
+        isSubmitting: false,
+        authError: null,
+        fieldErrors: {},
+        loginNotice: es.auth.accountDeleted,
+        oneTimeRecoveryCodes: null,
+        oneTimeRecoveryCodesNotice: null,
+        postRegisterCodesPending: false,
+      });
+      emitSessionEnd('deleted');
+      return true;
     }
 
     const user = await deps.userRepository.getById(activeUserId);
@@ -649,8 +1051,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isInitialized: true,
       isSubmitting: false,
       authError: null,
+      fieldErrors: {},
       loginNotice: es.auth.accountDeleted,
       oneTimeRecoveryCodes: null,
+      oneTimeRecoveryCodesNotice: null,
       postRegisterCodesPending: false,
     });
     emitSessionEnd('deleted');
@@ -660,6 +1064,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   acknowledgeRegistrationCodes: () => {
     set({
       oneTimeRecoveryCodes: null,
+      oneTimeRecoveryCodesNotice: null,
       postRegisterCodesPending: false,
     });
   },
@@ -667,11 +1072,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   dismissOneTimeRecoveryCodes: () => {
     set({
       oneTimeRecoveryCodes: null,
+      oneTimeRecoveryCodesNotice: null,
     });
   },
 
   clearAuthError: () => {
-    set({ authError: null });
+    set({ authError: null, fieldErrors: {} });
   },
 
   clearLoginNotice: () => {
@@ -681,5 +1087,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 export function resetAuthStore(): void {
   deps = createDefaultDependencies();
+  unauthorizedInFlight = null;
   useAuthStore.setState({ ...initialAuthState });
 }
+
+registerUnauthorizedHandler(() => useAuthStore.getState().handleMidSessionUnauthorized());

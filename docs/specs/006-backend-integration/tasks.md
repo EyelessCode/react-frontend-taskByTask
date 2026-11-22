@@ -61,7 +61,7 @@
   - **Done when:** All 37 OpenAPI operations are covered by passing contract tests, typecheck, and lint.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T5: Dual Recovery-Code Normalization & Dual-Mode `useAuthStore` Integration (`RF-01`..`RF-05`, `RNF-05`, `RNF-06`, `RNF-09`, `RNF-10`)**
+- [x] **T5: Dual Recovery-Code Normalization & Dual-Mode `useAuthStore` Integration (`RF-01`..`RF-05`, `RNF-05`, `RNF-06`, `RNF-09`, `RNF-10`)**
   - **Associated Requirements:** `REQ-BI-06`, `REQ-BI-07`, `REQ-BI-08`, `REQ-BI-10`, `REQ-BI-11`, `REQ-BI-12`, `REQ-BI-13`, `REQ-BI-14`, `REQ-BI-22`, `REQ-BI-23`, `AC-BI-03`, `AC-BI-04`, `AC-BI-05`
   - **Files Touched:**
     - `tests/unit/features/auth/recovery-code-normalization.test.ts` (created — tests for `XXXX-XXXX` and `XXXXXXXX` acceptance, misplaced-hyphen/bad-char/wrong-length errors, `localStorage` `XXXXXXXX` normalization, and `api` `XXXX-XXXX` normalization)
