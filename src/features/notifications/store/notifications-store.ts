@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import { getApiServices } from '../../../data/api';
 import type {
   GroupRepository,
   NotificationRepository,
+  NotificationsApiRepository,
   NotificationStateRepository,
   TaskRepository,
 } from '../../../data/contracts';
@@ -11,20 +13,29 @@ import {
   LocalStorageNotificationStateRepository,
   LocalStorageTaskRepository,
 } from '../../../data/repositories';
+import { getPersistenceConfig, type PersistenceMode } from '../../../shared/config';
+import {
+  ApiProblemError,
+  NetworkError,
+  RateLimitError,
+  UnauthorizedError,
+} from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
-import type {
-  HandledDueOccurrence,
-  HandledDueOccurrenceStatus,
-  Notification,
-  Task,
-  User,
-  UserNotificationState,
+import {
+  LIMITS,
+  type HandledDueOccurrence,
+  type HandledDueOccurrenceStatus,
+  type Notification,
+  type Task,
+  type User,
+  type UserNotificationState,
 } from '../../../shared/schemas';
 import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
 import {
   buildOccurrenceKey,
   classifyDueTaskAlert,
   createBrowserNotificationAdapter,
+  createWebPushAdapter,
   formatDueAlertContent,
   isPermissionBannerDue,
   isTaskDueAlertRecipient,
@@ -34,7 +45,16 @@ import {
   type ClearTimerFn,
   type DueAlertEvaluationMode,
   type SetTimerFn,
+  type WebPushAdapter,
 } from '../utils';
+
+export type PushStatus =
+  | 'idle'
+  | 'enabled'
+  | 'disabled-by-server'
+  | 'unavailable'
+  | 'unsupported'
+  | 'subscription-error';
 
 export interface NotificationsState {
   notifications: Notification[];
@@ -43,6 +63,11 @@ export interface NotificationsState {
   isPermissionBannerVisible: boolean;
   isCenterOpen: boolean;
   isLoading: boolean;
+  isLoadingMore: boolean;
+  hasNext: boolean;
+  nextCursor: string | null;
+  pushStatus: PushStatus;
+  vapidPublicKey: string | null;
   error: string | null;
 }
 
@@ -51,6 +76,7 @@ export interface NotificationsActions {
   refresh: () => Promise<void>;
   openCenter: () => Promise<void>;
   closeCenter: () => void;
+  loadMoreNotifications: () => Promise<void>;
   requestPermission: () => Promise<BrowserNotificationPermissionState>;
   dismissPermissionBanner: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
@@ -66,6 +92,9 @@ export interface NotificationsActions {
 export type NotificationsStore = NotificationsState & NotificationsActions;
 
 export interface NotificationsStoreDependencies {
+  mode?: PersistenceMode;
+  notificationsApi?: NotificationsApiRepository;
+  webPush: WebPushAdapter;
   notificationRepository: NotificationRepository;
   notificationStateRepository: NotificationStateRepository;
   taskRepository: TaskRepository;
@@ -87,6 +116,7 @@ function defaultCreateId(): string {
 
 function createDefaultDependencies(): NotificationsStoreDependencies {
   return {
+    webPush: createWebPushAdapter(),
     notificationRepository: new LocalStorageNotificationRepository(),
     notificationStateRepository: new LocalStorageNotificationStateRepository(),
     taskRepository: new LocalStorageTaskRepository(),
@@ -108,6 +138,43 @@ export function configureNotificationsStore(
   deps = { ...createDefaultDependencies(), ...overrides };
 }
 
+export function isNotificationsStoreApiMode(): boolean {
+  return (deps.mode ?? getPersistenceConfig().mode) === 'api';
+}
+
+function resolveNotificationsApi(): NotificationsApiRepository {
+  return deps.notificationsApi ?? getApiServices().notificationsApi;
+}
+
+function resolveApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiProblemError) {
+    return err.detail?.trim() || err.message;
+  }
+  if (
+    err instanceof RateLimitError ||
+    err instanceof NetworkError ||
+    err instanceof UnauthorizedError ||
+    err instanceof Error
+  ) {
+    return err.message;
+  }
+  return es.errors.unexpected;
+}
+
+function mergeNotificationsById(
+  existing: readonly Notification[],
+  incoming: readonly Notification[],
+): Notification[] {
+  const map = new Map<string, Notification>();
+  for (const item of existing) {
+    map.set(item.id, item);
+  }
+  for (const item of incoming) {
+    map.set(item.id, item);
+  }
+  return Array.from(map.values());
+}
+
 const initialState: NotificationsState = {
   notifications: [],
   unreadCount: 0,
@@ -115,6 +182,11 @@ const initialState: NotificationsState = {
   isPermissionBannerVisible: false,
   isCenterOpen: false,
   isLoading: false,
+  isLoadingMore: false,
+  hasNext: false,
+  nextCursor: null,
+  pushStatus: 'idle',
+  vapidPublicKey: null,
   error: null,
 };
 
@@ -382,6 +454,106 @@ async function syncWorkspaceTasksForUser(
   }
 }
 
+async function subscribeAndRegisterWebPush(vapidPublicKey: string): Promise<PushStatus> {
+  if (!deps.webPush.isSupported()) {
+    return 'unsupported';
+  }
+  try {
+    const subscription = await deps.webPush.subscribe(vapidPublicKey);
+    if (!subscription) {
+      return 'subscription-error';
+    }
+    await resolveNotificationsApi().registerPushSubscription(subscription);
+    return 'enabled';
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      throw err;
+    }
+    return 'subscription-error';
+  }
+}
+
+async function discoverAndSyncWebPush(
+  user: User,
+  nowMs: number,
+  nowIso: string,
+  evaluateBannerCooldown: boolean,
+): Promise<{
+  pushStatus: PushStatus;
+  vapidPublicKey: string | null;
+  permissionState: BrowserNotificationPermissionState;
+  isPermissionBannerVisible: boolean;
+}> {
+  const permission = deps.browserNotifications.getPermission();
+
+  let vapid: { enabled: boolean; publicKey: string | null };
+  try {
+    vapid = await resolveNotificationsApi().getVapidPublicKey();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      throw err;
+    }
+    return {
+      pushStatus: 'unavailable',
+      vapidPublicKey: null,
+      permissionState: permission,
+      isPermissionBannerVisible: false,
+    };
+  }
+
+  const publicKey = vapid.publicKey?.trim() || null;
+  if (!vapid.enabled || !publicKey) {
+    return {
+      pushStatus: 'disabled-by-server',
+      vapidPublicKey: null,
+      permissionState: permission,
+      isPermissionBannerVisible: false,
+    };
+  }
+
+  if (!deps.webPush.isSupported() || permission === 'unsupported') {
+    return {
+      pushStatus: 'unsupported',
+      vapidPublicKey: publicKey,
+      permissionState: permission,
+      isPermissionBannerVisible: false,
+    };
+  }
+
+  if (permission === 'granted') {
+    const status = await subscribeAndRegisterWebPush(publicKey);
+    return {
+      pushStatus: status,
+      vapidPublicKey: publicKey,
+      permissionState: permission,
+      isPermissionBannerVisible: false,
+    };
+  }
+
+  let bannerDue = false;
+  if (evaluateBannerCooldown) {
+    const userState = await deps.notificationStateRepository.getByUserId(user.id);
+    bannerDue = isPermissionBannerDue(
+      permission,
+      userState.permissionPromptLastShownAt,
+      nowMs,
+    );
+    if (bannerDue) {
+      await enqueueStateUpdate(user.id, (current) => ({
+        ...current,
+        permissionPromptLastShownAt: nowIso,
+      }));
+    }
+  }
+
+  return {
+    pushStatus: 'enabled',
+    vapidPublicKey: publicKey,
+    permissionState: permission,
+    isPermissionBannerVisible: bannerDue,
+  };
+}
+
 export const useNotificationsStore = create<NotificationsStore>()((set, get) => ({
   ...initialState,
 
@@ -396,6 +568,24 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
     try {
       const nowMs = deps.now();
       const nowIso = new Date(nowMs).toISOString();
+
+      if (isNotificationsStoreApiMode()) {
+        cancelAllTaskTimers();
+        const [unreadCount, pushInfo] = await Promise.all([
+          resolveNotificationsApi().getUnreadCount(),
+          discoverAndSyncWebPush(user, nowMs, nowIso, true),
+        ]);
+
+        set({
+          unreadCount,
+          permissionState: pushInfo.permissionState,
+          isPermissionBannerVisible: pushInfo.isPermissionBannerVisible,
+          pushStatus: pushInfo.pushStatus,
+          vapidPublicKey: pushInfo.vapidPublicKey,
+          isLoading: false,
+        });
+        return;
+      }
 
       await deps.notificationRepository.pruneExpired(user.id, nowIso);
 
@@ -425,7 +615,11 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
         isLoading: false,
       });
     } catch (err) {
-      set({ error: (err as Error).message, isLoading: false });
+      if (err instanceof UnauthorizedError) {
+        set({ isLoading: false });
+        return;
+      }
+      set({ error: resolveApiErrorMessage(err), isLoading: false });
     }
   },
 
@@ -440,6 +634,62 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
     try {
       const nowMs = deps.now();
       const nowIso = new Date(nowMs).toISOString();
+
+      if (isNotificationsStoreApiMode()) {
+        cancelAllTaskTimers();
+        const api = resolveNotificationsApi();
+        const currentState = get();
+
+        const unreadPromise = api.getUnreadCount();
+        const pagePromise = currentState.isCenterOpen
+          ? api.listNotifications(user.id, { limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT })
+          : Promise.resolve(null);
+
+        const [unreadCount, page] = await Promise.all([unreadPromise, pagePromise]);
+
+        let pushPatch: Partial<NotificationsState> = {};
+        if (currentState.pushStatus === 'unavailable' || currentState.pushStatus === 'idle') {
+          const pushInfo = await discoverAndSyncWebPush(user, nowMs, nowIso, false);
+          pushPatch = {
+            pushStatus: pushInfo.pushStatus,
+            vapidPublicKey: pushInfo.vapidPublicKey,
+            permissionState: pushInfo.permissionState,
+            isPermissionBannerVisible: pushInfo.isPermissionBannerVisible,
+          };
+        } else {
+          const permission = deps.browserNotifications.getPermission();
+          const keepBanner =
+            currentState.pushStatus === 'enabled' &&
+            currentState.isPermissionBannerVisible &&
+            (permission === 'default' || permission === 'denied');
+          pushPatch = {
+            permissionState: permission,
+            isPermissionBannerVisible: keepBanner,
+          };
+          if (
+            currentState.pushStatus === 'enabled' &&
+            currentState.vapidPublicKey &&
+            permission === 'granted'
+          ) {
+            pushPatch.pushStatus = await subscribeAndRegisterWebPush(currentState.vapidPublicKey);
+          }
+        }
+
+        set({
+          unreadCount,
+          ...(page
+            ? {
+                notifications: page.content,
+                nextCursor: page.nextCursor,
+                hasNext: page.hasNext,
+                isLoadingMore: false,
+              }
+            : {}),
+          ...pushPatch,
+          isLoading: false,
+        });
+        return;
+      }
 
       await deps.notificationRepository.pruneExpired(user.id, nowIso);
       await syncWorkspaceTasksForUser(user, set);
@@ -458,7 +708,11 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
         isLoading: false,
       });
     } catch (err) {
-      set({ error: (err as Error).message, isLoading: false });
+      if (err instanceof UnauthorizedError) {
+        set({ isLoading: false });
+        return;
+      }
+      set({ error: resolveApiErrorMessage(err), isLoading: false });
     }
   },
 
@@ -470,6 +724,32 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
       return;
     }
 
+    if (isNotificationsStoreApiMode()) {
+      set({ isLoading: true, error: null });
+      try {
+        const api = resolveNotificationsApi();
+        const [page, unreadCount] = await Promise.all([
+          api.listNotifications(user.id, { limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT }),
+          api.getUnreadCount(),
+        ]);
+        set({
+          notifications: page.content,
+          nextCursor: page.nextCursor,
+          hasNext: page.hasNext,
+          isLoadingMore: false,
+          unreadCount,
+          isLoading: false,
+        });
+      } catch (err) {
+        if (err instanceof UnauthorizedError) {
+          set({ isLoading: false });
+          return;
+        }
+        set({ error: resolveApiErrorMessage(err), isLoading: false });
+      }
+      return;
+    }
+
     const nowIso = new Date(deps.now()).toISOString();
     await deps.notificationRepository.pruneExpired(user.id, nowIso);
     await refreshUserNotificationsInState(user.id, set);
@@ -477,6 +757,37 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
 
   closeCenter: () => {
     set({ isCenterOpen: false });
+  },
+
+  loadMoreNotifications: async () => {
+    if (!isNotificationsStoreApiMode()) {
+      return;
+    }
+    const user = deps.getCurrentUser();
+    const state = get();
+    if (!user || !state.hasNext || !state.nextCursor || state.isLoadingMore) {
+      return;
+    }
+
+    set({ isLoadingMore: true, error: null });
+    try {
+      const page = await resolveNotificationsApi().listNotifications(user.id, {
+        cursor: state.nextCursor,
+        limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT,
+      });
+      set((prev) => ({
+        notifications: mergeNotificationsById(prev.notifications, page.content),
+        nextCursor: page.nextCursor,
+        hasNext: page.hasNext,
+        isLoadingMore: false,
+      }));
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        set({ isLoadingMore: false });
+        return;
+      }
+      set({ error: resolveApiErrorMessage(err), isLoadingMore: false });
+    }
   },
 
   requestPermission: async () => {
@@ -500,6 +811,21 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
         permissionState: nextPermission,
       });
     }
+
+    if (isNotificationsStoreApiMode() && nextPermission === 'granted') {
+      const { pushStatus, vapidPublicKey } = get();
+      if (pushStatus === 'enabled' && vapidPublicKey) {
+        try {
+          const nextStatus = await subscribeAndRegisterWebPush(vapidPublicKey);
+          set({ pushStatus: nextStatus });
+        } catch (err) {
+          if (!(err instanceof UnauthorizedError)) {
+            set({ pushStatus: 'subscription-error' });
+          }
+        }
+      }
+    }
+
     return nextPermission;
   },
 
@@ -520,6 +846,29 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
     if (!user) {
       return;
     }
+
+    if (isNotificationsStoreApiMode()) {
+      try {
+        const updated = await resolveNotificationsApi().markAsRead(notificationId, user.id);
+        set((prev) => {
+          const existing = prev.notifications.find((n) => n.id === notificationId);
+          const wasUnread = existing ? !existing.read : false;
+          return {
+            notifications: prev.notifications.map((n) =>
+              n.id === notificationId ? updated : n,
+            ),
+            unreadCount: wasUnread ? Math.max(0, prev.unreadCount - 1) : prev.unreadCount,
+            error: null,
+          };
+        });
+      } catch (err) {
+        if (!(err instanceof UnauthorizedError)) {
+          set({ error: resolveApiErrorMessage(err) });
+        }
+      }
+      return;
+    }
+
     await deps.notificationRepository.markAsRead(user.id, notificationId);
     await refreshUserNotificationsInState(user.id, set);
   },
@@ -529,6 +878,23 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
     if (!user) {
       return;
     }
+
+    if (isNotificationsStoreApiMode()) {
+      try {
+        await resolveNotificationsApi().markAllAsRead();
+        set((prev) => ({
+          notifications: prev.notifications.map((n) => ({ ...n, read: true })),
+          unreadCount: 0,
+          error: null,
+        }));
+      } catch (err) {
+        if (!(err instanceof UnauthorizedError)) {
+          set({ error: resolveApiErrorMessage(err) });
+        }
+      }
+      return;
+    }
+
     await deps.notificationRepository.markAllAsRead(user.id);
     await refreshUserNotificationsInState(user.id, set);
   },
@@ -538,11 +904,35 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
     if (!user) {
       return;
     }
+
+    if (isNotificationsStoreApiMode()) {
+      try {
+        await resolveNotificationsApi().deleteNotification(notificationId);
+        set((prev) => {
+          const target = prev.notifications.find((n) => n.id === notificationId);
+          const wasUnread = target ? !target.read : false;
+          return {
+            notifications: prev.notifications.filter((n) => n.id !== notificationId),
+            unreadCount: wasUnread ? Math.max(0, prev.unreadCount - 1) : prev.unreadCount,
+            error: null,
+          };
+        });
+      } catch (err) {
+        if (!(err instanceof UnauthorizedError)) {
+          set({ error: resolveApiErrorMessage(err) });
+        }
+      }
+      return;
+    }
+
     await deps.notificationRepository.delete(user.id, notificationId);
     await refreshUserNotificationsInState(user.id, set);
   },
 
   handleTaskSaved: async (task: Task, userId: string, scheduleChanged: boolean) => {
+    if (isNotificationsStoreApiMode()) {
+      return;
+    }
     const user = deps.getCurrentUser();
     if (!user || user.id !== userId) {
       return;
@@ -565,6 +955,9 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
   },
 
   handleTaskToggled: async (task: Task, userId: string) => {
+    if (isNotificationsStoreApiMode()) {
+      return;
+    }
     const user = deps.getCurrentUser();
     if (!user || user.id !== userId) {
       return;
@@ -581,6 +974,9 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
   },
 
   handleTaskDeleted: async (taskId: string, userId: string) => {
+    if (isNotificationsStoreApiMode()) {
+      return;
+    }
     cancelTaskTimer(taskId);
     const user = deps.getCurrentUser();
     if (!user || user.id !== userId) {
@@ -590,6 +986,9 @@ export const useNotificationsStore = create<NotificationsStore>()((set, get) => 
   },
 
   handleTasksDeleted: async (taskIds: string[], userId: string) => {
+    if (isNotificationsStoreApiMode()) {
+      return;
+    }
     for (const taskId of taskIds) {
       cancelTaskTimer(taskId);
     }

@@ -1,9 +1,10 @@
-import { useGroupsStore } from '../store';
+import { isGroupsStoreApiMode, useGroupsStore } from '../store';
 import { sortGroups } from '../utils/group-sort';
 import { filterTasksByCriteria } from '../utils/filter-tasks';
 
 export function useGroups() {
   const store = useGroupsStore();
+  const isApiMode = isGroupsStoreApiMode();
 
   const sortedGroups = sortGroups(store.groups);
   const visibleGroups =
@@ -22,13 +23,26 @@ export function useGroups() {
       ? tasksInVisibleGroups.filter((t) => t.title.toLowerCase().includes(query))
       : tasksInVisibleGroups;
 
-  const counts = {
-    pending: searchMatchedTasks.filter((t) => !t.completed).length,
-    completed: searchMatchedTasks.filter((t) => t.completed).length,
-    all: searchMatchedTasks.length,
-  };
+  const counts = isApiMode
+    ? {
+        pending: store.activeFilter === 'pendientes' ? tasksInVisibleGroups.length : 0,
+        completed: store.activeFilter === 'completadas' ? tasksInVisibleGroups.length : 0,
+        all: store.activeFilter === 'todas' ? tasksInVisibleGroups.length : 0,
+      }
+    : {
+        pending: searchMatchedTasks.filter((t) => !t.completed).length,
+        completed: searchMatchedTasks.filter((t) => t.completed).length,
+        all: searchMatchedTasks.length,
+      };
+
+  const activeTabHasMore = isApiMode
+    ? visibleGroups.some((g) => store.groupTaskPages[g.id]?.hasNext === true)
+    : false;
 
   const getGroupTasks = (groupId: string) => {
+    if (isApiMode) {
+      return store.tasks.filter((t) => t.groupId === groupId);
+    }
     return filterTasksByCriteria(store.tasks, {
       groupId,
       filter: store.activeFilter,
@@ -49,6 +63,13 @@ export function useGroups() {
     isLoading: store.isLoading,
     error: store.error,
     counts,
+    isApiMode,
+    groupsNextCursor: store.groupsNextCursor,
+    groupsHasNext: store.groupsHasNext,
+    isLoadingMoreGroups: store.isLoadingMoreGroups,
+    groupTaskPages: store.groupTaskPages,
+    activeTabHasMore,
+    globalSearchHasMatches: store.globalSearchHasMatches,
     getGroupTasks,
 
     init: store.init,
@@ -56,11 +77,14 @@ export function useGroups() {
     renameGroup: store.renameGroup,
     deleteGroup: store.deleteGroup,
     refresh: store.refresh,
+    loadMoreGroups: store.loadMoreGroups,
+    loadMoreGroupTasks: store.loadMoreGroupTasks,
     setSelectedGroupIds: store.setSelectedGroupIds,
     toggleGroupId: store.toggleGroupId,
     setSearchQuery: store.setSearchQuery,
     setActiveFilter: store.setActiveFilter,
     openModal: store.openModal,
     closeModal: store.closeModal,
+    clearError: store.clearError,
   };
 }

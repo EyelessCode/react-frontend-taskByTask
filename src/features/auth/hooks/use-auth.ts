@@ -9,8 +9,10 @@ export function useAuth() {
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const isSubmitting = useAuthStore((state) => state.isSubmitting);
   const authError = useAuthStore((state) => state.authError);
+  const fieldErrors = useAuthStore((state) => state.fieldErrors);
   const loginNotice = useAuthStore((state) => state.loginNotice);
   const oneTimeRecoveryCodes = useAuthStore((state) => state.oneTimeRecoveryCodes);
+  const oneTimeRecoveryCodesNotice = useAuthStore((state) => state.oneTimeRecoveryCodesNotice);
   const postRegisterCodesPending = useAuthStore((state) => state.postRegisterCodesPending);
 
   const validateSession = useAuthStore((state) => state.validateSession);
@@ -34,8 +36,10 @@ export function useAuth() {
     isInitialized,
     isSubmitting,
     authError,
+    fieldErrors,
     loginNotice,
     oneTimeRecoveryCodes,
+    oneTimeRecoveryCodesNotice,
     postRegisterCodesPending,
     validateSession,
     ensureActiveUserId,

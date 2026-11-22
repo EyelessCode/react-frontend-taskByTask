@@ -54,10 +54,18 @@ export function GroupsGridView({
     isLoading,
     error,
     counts,
+    isApiMode,
+    groupsHasNext,
+    isLoadingMoreGroups,
+    groupTaskPages,
+    activeTabHasMore,
+    globalSearchHasMatches,
     getGroupTasks,
     init,
     deleteGroup,
     refresh,
+    loadMoreGroups,
+    loadMoreGroupTasks,
     setSelectedGroupIds,
     toggleGroupId,
     setSearchQuery,
@@ -96,8 +104,19 @@ export function GroupsGridView({
   const activeGroup =
     groups.find((g) => g.id === activeGroupId) ?? groups[0] ?? null;
 
-  const isGlobalSearchEmpty =
-    searchQuery.trim().length > 0 && counts.all === 0;
+  const activeLoadedCount =
+    activeFilter === 'pendientes'
+      ? counts.pending
+      : activeFilter === 'completadas'
+        ? counts.completed
+        : counts.all;
+
+  const isGlobalSearchEmpty = isApiMode
+    ? searchQuery.trim().length > 0 &&
+      activeLoadedCount === 0 &&
+      !globalSearchHasMatches &&
+      !isLoading
+    : searchQuery.trim().length > 0 && counts.all === 0;
 
   const activeTaskModalTask = taskModalState.taskId
     ? allTasks.find((t) => t.id === taskModalState.taskId) ?? null
@@ -193,6 +212,13 @@ export function GroupsGridView({
         searchQuery={searchQuery}
         activeFilter={activeFilter}
         counts={counts}
+        isApiMode={isApiMode}
+        activeTabHasMore={activeTabHasMore}
+        groupsHasNext={groupsHasNext}
+        isLoadingMoreGroups={isLoadingMoreGroups}
+        onLoadMoreGroups={() => {
+          void loadMoreGroups();
+        }}
         onSearchChange={setSearchQuery}
         onFilterChange={setActiveFilter}
         onToggleGroup={toggleGroupId}
@@ -227,41 +253,64 @@ export function GroupsGridView({
           <p>{es.groups.noGroupsFound}</p>
         </div>
       ) : (
-        <Row xs={1} md={2} lg={3} className="g-3">
-          {visibleGroups.map((group) => (
-            <Col key={group.id}>
-              <GroupCard
-                group={group}
-                tasks={getGroupTasks(group.id)}
-                tags={tags}
-                timeFormat={timeFormat}
-                timeZone={timeZone}
-                onAddTask={(groupId) => {
-                  setInlineGroupId(groupId);
-                  tasksSetActiveGroup(groupId);
-                  tasksOpenModal('create');
+        <>
+          <Row xs={1} md={2} lg={3} className="g-3">
+            {visibleGroups.map((group) => (
+              <Col key={group.id}>
+                <GroupCard
+                  group={group}
+                  tasks={getGroupTasks(group.id)}
+                  tags={tags}
+                  hasMoreTasks={groupTaskPages[group.id]?.hasNext ?? false}
+                  isLoadingMoreTasks={groupTaskPages[group.id]?.isLoadingMore ?? false}
+                  onLoadMoreTasks={(groupId) => {
+                    void loadMoreGroupTasks(groupId);
+                  }}
+                  timeFormat={timeFormat}
+                  timeZone={timeZone}
+                  onAddTask={(groupId) => {
+                    setInlineGroupId(groupId);
+                    tasksSetActiveGroup(groupId);
+                    tasksOpenModal('create');
+                  }}
+                  onRenameGroup={(grp) => openGroupModal('rename', grp)}
+                  onDeleteGroup={(grp) => openGroupModal('delete', grp)}
+                  onToggleComplete={async (taskId) => {
+                    await toggleTaskComplete(taskId);
+                    if (!isApiMode) {
+                      await refresh();
+                    }
+                  }}
+                  onEditTask={(task) => tasksOpenModal('edit', task.id)}
+                  onMoveTask={(task) => tasksOpenModal('move', task.id)}
+                  onCopyTask={(task) => tasksOpenModal('copy', task.id)}
+                  onDeleteTask={(task) => tasksOpenModal('delete', task.id)}
+                  onRemoveTag={(task, tag) => {
+                    lastRemovalTaskIdRef.current = task.id;
+                    tasksOpenModal('tagRemoval', task.id, {
+                      tagId: tag.id,
+                      tagName: tag.name,
+                    });
+                  }}
+                />
+              </Col>
+            ))}
+          </Row>
+
+          {groupsHasNext && (
+            <div className="d-flex justify-content-center mt-4">
+              <Button
+                variant="outline-primary"
+                disabled={isLoadingMoreGroups}
+                onClick={() => {
+                  void loadMoreGroups();
                 }}
-                onRenameGroup={(grp) => openGroupModal('rename', grp)}
-                onDeleteGroup={(grp) => openGroupModal('delete', grp)}
-                onToggleComplete={async (taskId) => {
-                  await toggleTaskComplete(taskId);
-                  await refresh();
-                }}
-                onEditTask={(task) => tasksOpenModal('edit', task.id)}
-                onMoveTask={(task) => tasksOpenModal('move', task.id)}
-                onCopyTask={(task) => tasksOpenModal('copy', task.id)}
-                onDeleteTask={(task) => tasksOpenModal('delete', task.id)}
-                onRemoveTag={(task, tag) => {
-                  lastRemovalTaskIdRef.current = task.id;
-                  tasksOpenModal('tagRemoval', task.id, {
-                    tagId: tag.id,
-                    tagName: tag.name,
-                  });
-                }}
-              />
-            </Col>
-          ))}
-        </Row>
+              >
+                {isLoadingMoreGroups ? es.common.loadingMore : es.groups.loadMoreGroups}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Group Modals */}
@@ -272,7 +321,7 @@ export function GroupsGridView({
         }
         group={groupModalState.group}
         onClose={closeGroupModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <GroupDeleteConfirmModal
@@ -297,8 +346,8 @@ export function GroupsGridView({
           setInlineGroupId(null);
           tasksCloseModal();
         }}
-        onSuccess={refresh}
-        onTagMutated={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
+        onTagMutated={isApiMode ? undefined : refresh}
       />
 
       <TaskMoveCopyModal
@@ -308,14 +357,14 @@ export function GroupsGridView({
         mode={taskModalState.type === 'move' ? 'move' : 'copy'}
         task={activeTaskModalTask}
         onClose={tasksCloseModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <TaskDeleteConfirmModal
         show={taskModalState.type === 'delete'}
         task={activeTaskModalTask}
         onClose={tasksCloseModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <TaskTagRemovalModal
@@ -335,13 +384,17 @@ export function GroupsGridView({
               taskModalState.taskId,
               taskModalState.tagId,
             );
-            await refresh();
+            if (!isApiMode) {
+              await refresh();
+            }
           }
         }}
         onRemoveFromGroup={async () => {
           if (taskModalState.tagId) {
             await deleteTagFromGroup(taskModalState.tagId);
-            await refresh();
+            if (!isApiMode) {
+              await refresh();
+            }
           }
         }}
       />

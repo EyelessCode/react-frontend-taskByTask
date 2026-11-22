@@ -9,9 +9,9 @@ import {
   ValidationError,
 } from '../../shared/errors';
 import { es } from '../../shared/i18n';
-import { userSchema, type User } from '../../shared/schemas';
+import { localUserSchema, type User } from '../../shared/schemas';
 
-const usersArraySchema = z.array(userSchema);
+const usersArraySchema = z.array(localUserSchema);
 
 export class LocalStorageUserRepository implements UserRepository {
   private readonly storageAdapter: StorageAdapter;
@@ -42,7 +42,7 @@ export class LocalStorageUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<void> {
-    const parseResult = userSchema.safeParse(user);
+    const parseResult = localUserSchema.safeParse(user);
     if (!parseResult.success) {
       const issues = parseResult.error.issues.map((i) => ({
         path: i.path.join('.'),

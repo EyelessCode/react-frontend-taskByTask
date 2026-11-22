@@ -1,21 +1,35 @@
 import { create } from 'zustand';
-import type { Task, Group, Tag } from '../../../shared/schemas';
-import type { TaskFilter } from '../utils/task-sort';
-import type { TaskFormInput } from '../schemas/task-form-schema';
+import { getApiServices, mapTaskFilterToApiStatus } from '../../../data/api';
 import type {
-  TaskRepository,
   GroupRepository,
+  GroupsApiRepository,
   TagRepository,
+  TagsApiRepository,
+  TaskRepository,
+  TasksApiRepository,
+  UpdateTaskPatchApiInput,
 } from '../../../data/contracts';
 import {
-  LocalStorageTaskRepository,
   LocalStorageGroupRepository,
   LocalStorageTagRepository,
+  LocalStorageTaskRepository,
 } from '../../../data/repositories';
-import { BusinessRuleViolationError, NotFoundError } from '../../../shared/errors';
+import { getPersistenceConfig, type PersistenceMode } from '../../../shared/config';
+import {
+  ApiProblemError,
+  BusinessRuleViolationError,
+  NetworkError,
+  NotFoundError,
+  RateLimitError,
+  UnauthorizedError,
+} from '../../../shared/errors';
 import { es } from '../../../shared/i18n';
+import { LIMITS, type Group, type Tag, type Task } from '../../../shared/schemas';
 import { subscribeAuthSessionEnd, useAuthStore } from '../../auth/store';
+import { useGroupsStore } from '../../groups/store/groups-store';
 import { useNotificationsStore } from '../../notifications/store';
+import type { TaskFormInput } from '../schemas/task-form-schema';
+import type { TaskFilter } from '../utils/task-sort';
 
 export type ModalType =
   | 'create'
@@ -55,6 +69,8 @@ export interface TasksActions {
     extra?: { tagId?: string; tagName?: string },
   ) => void;
   closeModal: () => void;
+  loadGroupTags: (groupId: string, query?: string) => Promise<Tag[]>;
+  getTaskById: (taskId: string) => Promise<Task | null>;
   createTask: (payload: TaskFormInput) => Promise<Task>;
   updateTask: (taskId: string, payload: Partial<TaskFormInput>) => Promise<Task>;
   deleteTask: (taskId: string) => Promise<void>;
@@ -62,7 +78,7 @@ export interface TasksActions {
   moveTask: (taskId: string, targetGroupId: string) => Promise<void>;
   copyTask: (taskId: string, targetGroupId: string) => Promise<Task>;
   removeTagFromTask: (taskId: string, tagId: string) => Promise<void>;
-  deleteTagFromGroup: (tagId: string) => Promise<void>;
+  deleteTagFromGroup: (tagId: string, groupId?: string) => Promise<void>;
 }
 
 export type TasksStore = TasksState & TasksActions;
@@ -74,6 +90,10 @@ export interface TaskNotificationHooks {
 }
 
 export interface TasksStoreDependencies {
+  mode?: PersistenceMode;
+  tasksApi?: TasksApiRepository;
+  groupsApi?: GroupsApiRepository;
+  tagsApi?: TagsApiRepository;
   taskRepository: TaskRepository;
   groupRepository: GroupRepository;
   tagRepository: TagRepository;
@@ -102,6 +122,51 @@ let deps: TasksStoreDependencies = createDefaultDependencies();
 
 export function configureTasksStore(newDeps: Partial<TasksStoreDependencies>): void {
   deps = { ...createDefaultDependencies(), ...newDeps };
+}
+
+export function isTasksStoreApiMode(): boolean {
+  return (deps.mode ?? getPersistenceConfig().mode) === 'api';
+}
+
+function resolveTasksApi(): TasksApiRepository {
+  return deps.tasksApi ?? getApiServices().tasksApi;
+}
+
+function resolveGroupsApi(): GroupsApiRepository {
+  return deps.groupsApi ?? getApiServices().groupsApi;
+}
+
+function resolveTagsApi(): TagsApiRepository {
+  return deps.tagsApi ?? getApiServices().tagsApi;
+}
+
+function resolveApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiProblemError) {
+    return err.detail?.trim() || err.message;
+  }
+  if (
+    err instanceof RateLimitError ||
+    err instanceof NetworkError ||
+    err instanceof UnauthorizedError ||
+    err instanceof Error
+  ) {
+    return err.message;
+  }
+  return es.errors.unexpected;
+}
+
+function mergeById<T extends { id: string }>(
+  existing: readonly T[],
+  incoming: readonly T[],
+): T[] {
+  const map = new Map<string, T>();
+  for (const item of existing) {
+    map.set(item.id, item);
+  }
+  for (const item of incoming) {
+    map.set(item.id, item);
+  }
+  return Array.from(map.values());
 }
 
 const initialState: TasksState = {
@@ -157,6 +222,15 @@ async function getAccessibleAllTags(accessibleGroupIds: Set<string>): Promise<Ta
   return allTags.filter((t) => accessibleGroupIds.has(t.groupId));
 }
 
+function removeStaleTaskFromStores(taskId: string): void {
+  useTasksStore.setState((state) => ({
+    tasks: state.tasks.filter((t) => t.id !== taskId),
+  }));
+  useGroupsStore.setState((gState) => ({
+    tasks: gState.tasks.filter((t) => t.id !== taskId),
+  }));
+}
+
 export const useTasksStore = create<TasksStore>()((set, get) => ({
   ...initialState,
 
@@ -173,6 +247,56 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
           allTags: [],
           isLoading: false,
         });
+        return;
+      }
+
+      if (isTasksStoreApiMode()) {
+        const existingGroups = useGroupsStore.getState().groups;
+        const groups =
+          existingGroups.length > 0
+            ? existingGroups
+            : (await resolveGroupsApi().listGroups({ limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT })).content;
+
+        const personalGroup = groups.find((g) => g.isPersonal);
+        const currentActive = get().activeGroupId;
+        const resolvedActive = groups.some((g) => g.id === currentActive)
+          ? currentActive
+          : personalGroup?.id ?? groups[0]?.id ?? '';
+
+        if (!resolvedActive) {
+          set({
+            groups,
+            activeGroupId: '',
+            tasks: [],
+            tags: [],
+            allTags: [],
+            isLoading: false,
+          });
+          return;
+        }
+
+        const [taskPage, tagPage] = await Promise.all([
+          resolveTasksApi().listGroupTasks(resolvedActive, {
+            status: mapTaskFilterToApiStatus(get().activeFilter),
+            limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT,
+          }),
+          resolveTagsApi().listGroupTags(resolvedActive, {
+            limit: LIMITS.KEYSET_PAGE_LIMIT_MAX,
+          }),
+        ]);
+
+        const groupTasks = taskPage.content.map((item) => item.task);
+        const extractedTags = taskPage.content.flatMap((item) => item.tags);
+        const mergedGroupTags = mergeById(tagPage.content, extractedTags);
+
+        set((state) => ({
+          groups,
+          activeGroupId: resolvedActive,
+          tasks: groupTasks,
+          tags: mergedGroupTags,
+          allTags: mergeById(state.allTags, mergedGroupTags),
+          isLoading: false,
+        }));
         return;
       }
 
@@ -202,7 +326,11 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         isLoading: false,
       });
     } catch (err) {
-      set({ error: (err as Error).message, isLoading: false });
+      if (err instanceof UnauthorizedError) {
+        set({ isLoading: false });
+        return;
+      }
+      set({ error: resolveApiErrorMessage(err), isLoading: false });
     }
   },
 
@@ -212,6 +340,30 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
       const activeUserId = await deps.getActiveUserId();
       if (!activeUserId) {
         resetTasksStore();
+        return;
+      }
+
+      if (isTasksStoreApiMode()) {
+        const [taskPage, tagPage] = await Promise.all([
+          resolveTasksApi().listGroupTasks(groupId, {
+            status: mapTaskFilterToApiStatus(get().activeFilter),
+            limit: LIMITS.KEYSET_PAGE_LIMIT_DEFAULT,
+          }),
+          resolveTagsApi().listGroupTags(groupId, {
+            limit: LIMITS.KEYSET_PAGE_LIMIT_MAX,
+          }),
+        ]);
+        const groupTasks = taskPage.content.map((item) => item.task);
+        const extractedTags = taskPage.content.flatMap((item) => item.tags);
+        const mergedGroupTags = mergeById(tagPage.content, extractedTags);
+
+        set((state) => ({
+          activeGroupId: groupId,
+          tasks: groupTasks,
+          tags: mergedGroupTags,
+          allTags: mergeById(state.allTags, mergedGroupTags),
+          isLoading: false,
+        }));
         return;
       }
 
@@ -231,7 +383,11 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
         isLoading: false,
       });
     } catch (err) {
-      set({ error: (err as Error).message, isLoading: false });
+      if (err instanceof UnauthorizedError) {
+        set({ isLoading: false });
+        return;
+      }
+      set({ error: resolveApiErrorMessage(err), isLoading: false });
     }
   },
 
@@ -241,6 +397,7 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   openModal: (type, taskId = null, extra) => {
     set({
+      error: null,
       modalState: {
         type,
         taskId: taskId ?? null,
@@ -261,9 +418,112 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     });
   },
 
+  loadGroupTags: async (groupId: string, query?: string): Promise<Tag[]> => {
+    if (!groupId) {
+      return [];
+    }
+
+    if (!isTasksStoreApiMode()) {
+      const localTags = await deps.tagRepository.getByGroupId(groupId);
+      const q = query?.trim().toLowerCase();
+      return q ? localTags.filter((t) => t.name.toLowerCase().includes(q)) : localTags;
+    }
+
+    try {
+      const page = await resolveTagsApi().listGroupTags(groupId, {
+        query: query?.trim() || undefined,
+        limit: LIMITS.KEYSET_PAGE_LIMIT_MAX,
+      });
+
+      set((state) => ({
+        tags: state.activeGroupId === groupId ? mergeById(state.tags, page.content) : state.tags,
+        allTags: mergeById(state.allTags, page.content),
+      }));
+      useGroupsStore.setState((gState) => ({
+        tags: mergeById(gState.tags, page.content),
+      }));
+
+      return page.content;
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        return [];
+      }
+      set({ error: resolveApiErrorMessage(err) });
+      return [];
+    }
+  },
+
+  getTaskById: async (taskId: string): Promise<Task | null> => {
+    if (!isTasksStoreApiMode()) {
+      return deps.taskRepository.getById(taskId);
+    }
+
+    try {
+      const { task, tags } = await resolveTasksApi().getTask(taskId);
+      set((state) => ({
+        tasks: mergeById(state.tasks, [task]),
+        tags: state.activeGroupId === task.groupId ? mergeById(state.tags, tags) : state.tags,
+        allTags: mergeById(state.allTags, tags),
+      }));
+      useGroupsStore.setState((gState) => ({
+        tasks: mergeById(gState.tasks, [task]),
+        tags: mergeById(gState.tags, tags),
+      }));
+      return task;
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        return null;
+      }
+      if (err instanceof ApiProblemError && err.status === 404) {
+        removeStaleTaskFromStores(taskId);
+      }
+      set({ error: resolveApiErrorMessage(err) });
+      return null;
+    }
+  },
+
   createTask: async (payload: TaskFormInput) => {
     const activeUserId = await requireActiveUserId();
     const targetGroupId = payload.groupId || get().activeGroupId;
+
+    if (isTasksStoreApiMode()) {
+      try {
+        const { task, tags } = await resolveTasksApi().createTask(targetGroupId, {
+          title: payload.title.trim(),
+          description: payload.description?.trim() || null,
+          dueDate: payload.dueDate?.trim() || null,
+          dueTime: payload.dueTime?.trim() || null,
+          tags: payload.tagNames && payload.tagNames.length > 0 ? payload.tagNames : null,
+        });
+
+        set((state) => ({
+          tasks:
+            targetGroupId === state.activeGroupId
+              ? mergeById(state.tasks, [task])
+              : state.tasks,
+          tags:
+            targetGroupId === state.activeGroupId
+              ? mergeById(state.tags, tags)
+              : state.tags,
+          allTags: mergeById(state.allTags, tags),
+          error: null,
+        }));
+
+        useGroupsStore.setState((gState) => ({
+          tasks:
+            gState.activeFilter === 'completadas'
+              ? gState.tasks
+              : mergeById(gState.tasks, [task]),
+          tags: mergeById(gState.tags, tags),
+        }));
+
+        return task;
+      } catch (err) {
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const accessibleGroupIds = await getAccessibleGroupIds(activeUserId);
     assertGroupAccessible(accessibleGroupIds, targetGroupId);
     const tagIds =
@@ -313,6 +573,59 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   updateTask: async (taskId: string, payload: Partial<TaskFormInput>) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      const patch: UpdateTaskPatchApiInput = {};
+      if (payload.title !== undefined) {
+        patch.title = payload.title.trim();
+      }
+      if (payload.description !== undefined) {
+        patch.description = payload.description?.trim() || null;
+      }
+      if (payload.dueDate !== undefined) {
+        patch.dueDate = payload.dueDate?.trim() || null;
+      }
+      if (payload.dueTime !== undefined) {
+        patch.dueTime = payload.dueTime?.trim() || null;
+      }
+      if (payload.tagNames !== undefined) {
+        patch.tags = payload.tagNames.length > 0 ? payload.tagNames : null;
+      }
+
+      try {
+        const { task, tags } = await resolveTasksApi().updateTask(taskId, patch);
+
+        set((state) => ({
+          tasks: state.tasks.some((t) => t.id === taskId)
+            ? state.tasks.map((t) => (t.id === taskId ? task : t))
+            : state.activeGroupId === task.groupId
+              ? [...state.tasks, task]
+              : state.tasks,
+          tags:
+            state.activeGroupId === task.groupId
+              ? mergeById(state.tags, tags)
+              : state.tags,
+          allTags: mergeById(state.allTags, tags),
+          error: null,
+        }));
+
+        useGroupsStore.setState((gState) => ({
+          tasks: gState.tasks.some((t) => t.id === taskId)
+            ? gState.tasks.map((t) => (t.id === taskId ? task : t))
+            : [...gState.tasks, task],
+          tags: mergeById(gState.tags, tags),
+        }));
+
+        return task;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const existing = await deps.taskRepository.getById(taskId);
     if (!existing) {
       throw new NotFoundError('Tarea', taskId);
@@ -362,6 +675,22 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   deleteTask: async (taskId: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      try {
+        await resolveTasksApi().deleteTask(taskId);
+        removeStaleTaskFromStores(taskId);
+        set({ error: null });
+        return;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const existing = await deps.taskRepository.getById(taskId);
     if (!existing) {
       throw new NotFoundError('Tarea', taskId);
@@ -379,6 +708,52 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   toggleTaskComplete: async (taskId: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      const existing =
+        get().tasks.find((t) => t.id === taskId) ??
+        useGroupsStore.getState().tasks.find((t) => t.id === taskId) ??
+        (await get().getTaskById(taskId));
+
+      if (!existing) {
+        throw new NotFoundError('Tarea', taskId);
+      }
+
+      try {
+        const { task: updated, tags } = await resolveTasksApi().updateCompletion(
+          taskId,
+          !existing.completed,
+        );
+
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === taskId ? updated : t)),
+          allTags: mergeById(state.allTags, tags),
+          error: null,
+        }));
+
+        useGroupsStore.setState((gState) => {
+          const matchesActiveFilter =
+            gState.activeFilter === 'todas' ||
+            (gState.activeFilter === 'pendientes' && !updated.completed) ||
+            (gState.activeFilter === 'completadas' && updated.completed);
+          return {
+            tasks: matchesActiveFilter
+              ? gState.tasks.map((t) => (t.id === taskId ? updated : t))
+              : gState.tasks.filter((t) => t.id !== taskId),
+            tags: mergeById(gState.tags, tags),
+          };
+        });
+
+        return;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -403,6 +778,41 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   moveTask: async (taskId: string, targetGroupId: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      try {
+        const { task: moved, tags } = await resolveTasksApi().moveTask(taskId, targetGroupId);
+
+        set((state) => ({
+          tasks:
+            state.activeGroupId === targetGroupId
+              ? mergeById(state.tasks, [moved])
+              : state.tasks.filter((t) => t.id !== taskId),
+          tags:
+            state.activeGroupId === targetGroupId
+              ? mergeById(state.tags, tags)
+              : state.tags,
+          allTags: mergeById(state.allTags, tags),
+          error: null,
+        }));
+
+        useGroupsStore.setState((gState) => ({
+          tasks: gState.tasks.some((t) => t.id === taskId)
+            ? gState.tasks.map((t) => (t.id === taskId ? moved : t))
+            : [...gState.tasks, moved],
+          tags: mergeById(gState.tags, tags),
+        }));
+
+        return;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -450,6 +860,45 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   copyTask: async (taskId: string, targetGroupId: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      try {
+        const { task: copied, tags } = await resolveTasksApi().copyTask(taskId, targetGroupId);
+
+        set((state) => ({
+          tasks:
+            state.activeGroupId === targetGroupId
+              ? mergeById(state.tasks, [copied])
+              : state.tasks,
+          tags:
+            state.activeGroupId === targetGroupId
+              ? mergeById(state.tags, tags)
+              : state.tags,
+          allTags: mergeById(state.allTags, tags),
+          error: null,
+        }));
+
+        useGroupsStore.setState((gState) => {
+          const matchesActiveFilter =
+            gState.activeFilter === 'todas' ||
+            (gState.activeFilter === 'pendientes' && !copied.completed) ||
+            (gState.activeFilter === 'completadas' && copied.completed);
+          return {
+            tasks: matchesActiveFilter ? mergeById(gState.tasks, [copied]) : gState.tasks,
+            tags: mergeById(gState.tags, tags),
+          };
+        });
+
+        return copied;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -505,6 +954,30 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
 
   removeTagFromTask: async (taskId: string, tagId: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      try {
+        await resolveTasksApi().detachTagFromTask(taskId, tagId);
+        const stripTag = (t: Task): Task =>
+          t.id === taskId ? { ...t, tagIds: (t.tagIds ?? []).filter((id) => id !== tagId) } : t;
+
+        set((state) => ({
+          tasks: state.tasks.map(stripTag),
+          error: null,
+        }));
+        useGroupsStore.setState((gState) => ({
+          tasks: gState.tasks.map(stripTag),
+        }));
+        return;
+      } catch (err) {
+        if (err instanceof ApiProblemError && err.status === 404) {
+          removeStaleTaskFromStores(taskId);
+        }
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const task = await deps.taskRepository.getById(taskId);
     if (!task) {
       throw new NotFoundError('Tarea', taskId);
@@ -524,8 +997,49 @@ export const useTasksStore = create<TasksStore>()((set, get) => ({
     }));
   },
 
-  deleteTagFromGroup: async (tagId: string) => {
+  deleteTagFromGroup: async (tagId: string, explicitGroupId?: string) => {
     const activeUserId = await requireActiveUserId();
+
+    if (isTasksStoreApiMode()) {
+      const gState = useGroupsStore.getState();
+      const resolvedGroupId =
+        explicitGroupId ??
+        get().tags.find((t) => t.id === tagId)?.groupId ??
+        get().allTags.find((t) => t.id === tagId)?.groupId ??
+        gState.tags.find((t) => t.id === tagId)?.groupId ??
+        get().tasks.find((t) => t.tagIds?.includes(tagId))?.groupId ??
+        gState.tasks.find((t) => t.tagIds?.includes(tagId))?.groupId;
+
+      if (!resolvedGroupId) {
+        throw new NotFoundError('Etiqueta', tagId);
+      }
+
+      try {
+        await resolveTagsApi().deleteGroupTag(resolvedGroupId, tagId);
+
+        const stripTagFromTask = (t: Task): Task => ({
+          ...t,
+          tagIds: (t.tagIds ?? []).filter((id) => id !== tagId),
+        });
+
+        set((state) => ({
+          tags: state.tags.filter((t) => t.id !== tagId),
+          allTags: state.allTags.filter((t) => t.id !== tagId),
+          tasks: state.tasks.map(stripTagFromTask),
+          error: null,
+        }));
+
+        useGroupsStore.setState((prev) => ({
+          tags: prev.tags.filter((t) => t.id !== tagId),
+          tasks: prev.tasks.map(stripTagFromTask),
+        }));
+        return;
+      } catch (err) {
+        set({ error: resolveApiErrorMessage(err) });
+        throw err;
+      }
+    }
+
     const tag = await deps.tagRepository.getById(tagId);
     if (!tag) {
       throw new NotFoundError('Etiqueta', tagId);

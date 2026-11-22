@@ -1,10 +1,21 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { taskFormSchema, type TaskFormData, type TaskFormInput } from '../schemas/task-form-schema';
-import { useTasksStore } from '../store';
-import { resolveTaskTags } from '../../tags/utils';
+import { extractFieldErrorMap } from '../../../data/api';
+import {
+  ApiProblemError,
+  NetworkError,
+  UnauthorizedError,
+} from '../../../shared/errors';
+import { es } from '../../../shared/i18n';
 import type { Task } from '../../../shared/schemas';
+import { resolveTaskTags } from '../../tags/utils';
+import {
+  taskFormSchema,
+  type TaskFormData,
+  type TaskFormInput,
+} from '../schemas/task-form-schema';
+import { isTasksStoreApiMode, useTasksStore } from '../store';
 
 export interface UseTaskFormOptions {
   task?: Task | null;
@@ -16,8 +27,16 @@ export interface UseTaskFormOptions {
 export function useTaskForm(options: UseTaskFormOptions = {}) {
   const { task, defaultGroupId, show = true, onSuccess } = options;
   const store = useTasksStore();
+  const isApiMode = isTasksStoreApiMode();
   const targetGroupId = task?.groupId ?? defaultGroupId ?? store.activeGroupId;
   const isEdit = Boolean(task);
+  const errorResetKey = show ? (task ? `edit:${task.id}` : `create:${targetGroupId}`) : 'closed';
+  const [prevErrorResetKey, setPrevErrorResetKey] = useState(errorResetKey);
+  const [apiError, setApiError] = useState<string | null>(null);
+  if (errorResetKey !== prevErrorResetKey) {
+    setPrevErrorResetKey(errorResetKey);
+    setApiError(null);
+  }
 
   const groupTags = useMemo(
     () =>
@@ -44,6 +63,13 @@ export function useTaskForm(options: UseTaskFormOptions = {}) {
       groupId: targetGroupId,
     },
   });
+
+  const { loadGroupTags } = store;
+  useEffect(() => {
+    if (show && isApiMode && targetGroupId) {
+      void loadGroupTags(targetGroupId);
+    }
+  }, [show, isApiMode, targetGroupId, loadGroupTags]);
 
   const lastResetKeyRef = useRef<string | null>(null);
 
@@ -92,12 +118,44 @@ export function useTaskForm(options: UseTaskFormOptions = {}) {
   }, [show, task, targetGroupId, groupTags, form]);
 
   const onSubmit = form.handleSubmit(async (data: TaskFormData) => {
-    if (isEdit && task) {
-      await store.updateTask(task.id, data);
-    } else {
-      await store.createTask(data);
+    setApiError(null);
+    try {
+      if (isEdit && task) {
+        await store.updateTask(task.id, data);
+      } else {
+        await store.createTask(data);
+      }
+      onSuccess?.();
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return;
+      }
+      if (error instanceof ApiProblemError) {
+        const fieldErrors = extractFieldErrorMap(error);
+        const fieldMap: Array<[string, keyof TaskFormInput]> = [
+          ['title', 'title'],
+          ['description', 'description'],
+          ['dueDate', 'dueDate'],
+          ['dueTime', 'dueTime'],
+          ['tags', 'tagNames'],
+          ['tagNames', 'tagNames'],
+          ['groupId', 'groupId'],
+        ];
+        for (const [apiKey, formKey] of fieldMap) {
+          const message = fieldErrors[apiKey];
+          if (message) {
+            form.setError(formKey, { type: 'server', message });
+          }
+        }
+        setApiError(error.detail?.trim() || error.message);
+        return;
+      }
+      if (error instanceof NetworkError || error instanceof Error) {
+        setApiError(error.message);
+        return;
+      }
+      setApiError(es.errors.unexpected);
     }
-    onSuccess?.();
   });
 
   return {
@@ -106,5 +164,7 @@ export function useTaskForm(options: UseTaskFormOptions = {}) {
     onSubmit,
     groupTags,
     persistedTagNames,
+    apiError,
+    clearApiError: () => setApiError(null),
   };
 }

@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { es } from '../../../shared/i18n';
 import { LIMITS, rawPasswordSchema } from '../../../shared/schemas';
+import {
+  normalizeRecoveryCodeForLocalStorage,
+  validateRecoveryCodeFormat,
+} from '../utils';
 
 /**
  * Zod form validation schemas for auth, recovery, profile, and account deletion flows.
@@ -31,10 +35,16 @@ const displayNameFieldSchema = z
 const recoveryCodeFieldSchema = z
   .string()
   .trim()
-  .min(1, es.auth.recoveryCodeRequired)
-  .length(LIMITS.RECOVERY_CODE_LENGTH, es.auth.recoveryCodeLengthError)
-  .regex(/^[A-Za-z0-9]+$/, es.auth.recoveryCodeFormatError)
-  .transform((value) => value.toUpperCase());
+  .superRefine((value, ctx) => {
+    const validation = validateRecoveryCodeFormat(value);
+    if (!validation.ok) {
+      ctx.addIssue({
+        code: 'custom',
+        message: validation.error,
+      });
+    }
+  })
+  .transform((value) => normalizeRecoveryCodeForLocalStorage(value));
 
 export const loginFormSchema = z.object({
   email: emailFieldSchema,

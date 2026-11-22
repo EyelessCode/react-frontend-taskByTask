@@ -82,7 +82,7 @@ describe('auth form Zod schemas', () => {
 
       const badChars = recoverFormSchema.safeParse({
         email: 'ana@example.com',
-        recoveryCode: 'ABCD-123',
+        recoveryCode: 'AB-CDEFGH',
         newPassword: 'newPassword1',
       });
       expect(badChars.success).toBe(false);
@@ -90,15 +90,25 @@ describe('auth form Zod schemas', () => {
         expect(badChars.error.issues[0]?.message).toBe(es.auth.recoveryCodeFormatError);
       }
 
-      const valid = recoverFormSchema.safeParse({
+      const validUnhyphenated = recoverFormSchema.safeParse({
         email: 'ANA@example.com',
         recoveryCode: ' ab12cd34 ',
         newPassword: '  newPass1 ',
       });
-      expect(valid.success).toBe(true);
-      if (valid.success) {
-        expect(valid.data.recoveryCode).toBe('AB12CD34');
-        expect(valid.data.newPassword).toBe('  newPass1 ');
+      expect(validUnhyphenated.success).toBe(true);
+      if (validUnhyphenated.success) {
+        expect(validUnhyphenated.data.recoveryCode).toBe('AB12CD34');
+        expect(validUnhyphenated.data.newPassword).toBe('  newPass1 ');
+      }
+
+      const validHyphenated = recoverFormSchema.safeParse({
+        email: 'ANA@example.com',
+        recoveryCode: ' ab12-cd34 ',
+        newPassword: '  newPass1 ',
+      });
+      expect(validHyphenated.success).toBe(true);
+      if (validHyphenated.success) {
+        expect(validHyphenated.data.recoveryCode).toBe('AB12CD34');
       }
     });
   });
