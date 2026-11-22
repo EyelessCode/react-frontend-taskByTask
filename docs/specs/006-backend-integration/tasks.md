@@ -35,7 +35,7 @@
   - **Done when:** All HTTP transport, CSRF, and RFC 7807 unit tests pass cleanly with zero `any` or lint warnings.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T3: OpenAPI `1.0.0-mvp` Zod DTO Schemas & Bidirectional Domain Mappers (`RNF-07`, `RNF-19`, `RNF-20`)**
+- [x] **T3: OpenAPI `1.0.0-mvp` Zod DTO Schemas & Bidirectional Domain Mappers (`RNF-07`, `RNF-19`, `RNF-20`)**
   - **Associated Requirements:** `REQ-BI-03`, `REQ-BI-10`, `REQ-BI-11`, `REQ-BI-14`, `REQ-BI-15`, `REQ-BI-17(7)`, `REQ-BI-19(2)`, `AC-BI-06`, `AC-BI-08`, Section 4.1
   - **Files Touched:**
     - `tests/unit/data/api/dto-mappers.test.ts` (created — unit tests validating every OpenAPI DTO schema and pure mapper: `int64 <-> string` IDs & invalid ID rejection, `UserResponse` `timezone`/`24H`/`12H`/`email` 255/`remainingRecoveryCodes`, `GroupResponse` -> `type: 'individual'` + single creator member `RNF-20`, `TaskResponse` `assignedUserId -> assigneeId`/`overdue`/`HH:mm[:ss] -> HH:mm`/embedded `tags`, `NotificationResponse` open non-empty `eventType`, `KeysetPage<T>`, and `VapidPublicKeyResponse`)
