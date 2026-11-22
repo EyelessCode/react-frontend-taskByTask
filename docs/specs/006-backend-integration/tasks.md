@@ -140,7 +140,7 @@
   - **Done when:** All unit and integration tests (existing + new) pass with zero errors or console warnings.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T11: Playwright End-to-End Tests (`AC-BI-01`..`AC-BI-10`) & Default `localStorage` Regression Suite**
+- [x] **T11: Playwright End-to-End Tests (`AC-BI-01`..`AC-BI-10`) & Default `localStorage` Regression Suite**
   - **Associated Requirements:** `AC-BI-01`..`AC-BI-10`, `REQ-BI-23`, `REQ-BI-24`, `UI-01`, `RNF-12`, `RNF-14`, `RNF-15`
   - **Files Touched:**
     - `tests/e2e/backend-integration.spec.ts` (created — Playwright E2E suite verifying mocked-API mode flows via `page.route('**/api/v1/**')`: CSRF + `credentials: "include"`, registration one-time codes, login + `429` cooldown, RFC 7807 `400` field errors, Groups/Tasks CRUD + Keyset `"Cargar más"` + server filters, Notification Center pagination + Web Push VAPID enabled/disabled notices + logout `{ endpoint }` cleanup, mid-session `401` expiry redirect with `sessionExpired`, tested at desktop `1280x720` and mobile `375x812` with zero console/page errors)

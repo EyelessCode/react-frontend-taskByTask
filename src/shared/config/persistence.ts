@@ -1,5 +1,16 @@
 import { ConfigurationError } from '../errors';
 
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_PERSISTENCE_MODE?: string;
+    readonly VITE_API_BASE_URL?: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
 export type PersistenceMode = 'localStorage' | 'api';
 
 export interface PersistenceConfig {
@@ -20,8 +31,10 @@ function normalizeApiBaseUrl(raw?: string): string {
 }
 
 function readDefaultEnv(): PersistenceEnvInput {
-  const meta = import.meta as ImportMeta & { env?: PersistenceEnvInput };
-  return meta.env ?? {};
+  return {
+    VITE_PERSISTENCE_MODE: import.meta.env.VITE_PERSISTENCE_MODE,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  };
 }
 
 /**
