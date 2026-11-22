@@ -1,8 +1,8 @@
 # Implementation Plan: `006-backend-integration` (Backend REST API Integration, Keyset Pagination & Web Push)
 
 - **Feature Name:** `006-backend-integration`
-- **Status:** approved
-- **Approved Spec:** [docs/specs/006-backend-integration/spec.md](./spec.md) (`Status: approved`)
+- **Status:** implemented
+- **Approved Spec:** [docs/specs/006-backend-integration/spec.md](./spec.md) (`Status: implemented`)
 - **OpenAPI Reference Snapshot:** `Task by Task API 1.0.0-mvp` (`27` paths / `37` operations)
 - **Constitution:** [docs/constitution.md](../../constitution.md)
 - **Reference Patterns:** `src/features/tasks/` (golden reference), `src/features/groups/`, `src/features/auth/`, `src/features/notifications/`

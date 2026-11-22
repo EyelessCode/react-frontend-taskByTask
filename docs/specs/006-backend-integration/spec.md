@@ -1,7 +1,7 @@
 # Spec 006: Backend REST API Integration, Keyset Pagination & Web Push
 
 - **Feature Name:** `006-backend-integration`
-- **Status:** approved
+- **Status:** implemented
 - **Created Date:** 2026-11-19
 - **Authors:** SDD Planner Agent
 - **SRS / SVD References:** `RF-01`, `RF-02`, `RF-03`, `RF-04`, `RF-05`, `RF-06`, `RF-07`, `RF-12`, `RF-13`, `RF-14`, `RF-15`, `RF-16`, `RF-22`, `RF-24`, `RF-25`, `RF-27`, `RF-28`, `RF-29`, `UI-01`, `UI-02`, `UI-06`, `UI-07`, `RNF-01`, `RNF-04`, `RNF-05`, `RNF-06`, `RNF-07`, `RNF-08`, `RNF-09`, `RNF-10`, `RNF-12`, `RNF-14`, `RNF-15`, `RNF-16`, `RNF-18`, `RNF-19`, `RNF-20`, `Appendix A`, `Appendix B`, `Appendix D`, `Constitution Principles 1–6`

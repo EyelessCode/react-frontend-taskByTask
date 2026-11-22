@@ -1,8 +1,8 @@
 # Task Checklist: `006-backend-integration` (Backend REST API Integration, Keyset Pagination & Web Push)
 
 - **Feature Name:** `006-backend-integration`
-- **Spec Reference:** [docs/specs/006-backend-integration/spec.md](./spec.md) (`Status: approved`)
-- **Plan Reference:** [docs/specs/006-backend-integration/plan.md](./plan.md) (`Status: approved`)
+- **Spec Reference:** [docs/specs/006-backend-integration/spec.md](./spec.md) (`Status: implemented`)
+- **Plan Reference:** [docs/specs/006-backend-integration/plan.md](./plan.md) (`Status: implemented`)
 
 ---
 
@@ -149,7 +149,7 @@
   - **Done when:** All Playwright E2E specs (all existing `localStorage` specs + `backend-integration.spec.ts`) pass cleanly at desktop and ~375px mobile widths with zero console/page errors.
   - **Verification Command:** `npm run e2e`
 
-- [ ] **T12: Final Verification, Spec/Plan/Tasks Closure & `MEMORY.md` Sync**
+- [x] **T12: Final Verification, Spec/Plan/Tasks Closure & `MEMORY.md` Sync**
   - **Associated Requirements:** `Constitution Principle 6`, `AGENTS.md`
   - **Files Touched:**
     - `docs/specs/006-backend-integration/spec.md` (modified — update `Status: implemented`)
