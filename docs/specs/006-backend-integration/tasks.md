@@ -130,7 +130,7 @@
   - **Done when:** All new API-mode notification & Web Push tests AND all existing `005-notifications` `localStorage` tests pass cleanly.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T10: Notification Center UI Pagination & Web Push Status + Full API-Mode RTL Integration Suite (`RF-27`, `RF-29`, `UI-01`, `RNF-04`, `RNF-12`, `RNF-14`)**
+- [x] **T10: Notification Center UI Pagination & Web Push Status + Full API-Mode RTL Integration Suite (`RF-27`, `RF-29`, `UI-01`, `RNF-04`, `RNF-12`, `RNF-14`)**
   - **Associated Requirements:** `REQ-BI-19`..`REQ-BI-24`, `AC-BI-01`..`AC-BI-10`
   - **Files Touched:**
     - `tests/integration/features/backend-integration/api-mode-flow.test.tsx` (created — end-to-end RTL integration suite in `api` mode with mocked `fetch`: cold-start `401` -> `/login`, login + CSRF bootstrap + timezone sync, register + 8 one-time codes, recover with `XXXX-XXXX` & `XXXXXXXX`, profile `12H`/`remainingRecoveryCodes`, Groups Grid View with `"Cargar más grupos"`, per-group `"Cargar más tareas"`, `N+`/active-tab counts, Move/Copy modal `"Cargar más grupos"`, Notification Center `"Cargar más notificaciones"`, `pushDisabledByServer` & `pushUnavailableStatus` notices, mid-session `401` redirect with `sessionExpired`, and explicit logout with `{ endpoint }`)

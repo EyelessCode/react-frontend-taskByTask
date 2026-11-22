@@ -7,12 +7,16 @@ export function NotificationPermissionBanner() {
   const {
     permissionState,
     isPermissionBannerVisible,
+    pushStatus,
     requestPermission,
     dismissPermissionBanner,
   } = useNotifications();
 
   if (
     !isPermissionBannerVisible ||
+    pushStatus === 'disabled-by-server' ||
+    pushStatus === 'unavailable' ||
+    pushStatus === 'unsupported' ||
     (permissionState !== 'default' && permissionState !== 'denied')
   ) {
     return null;

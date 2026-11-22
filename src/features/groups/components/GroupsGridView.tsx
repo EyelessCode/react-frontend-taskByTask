@@ -277,7 +277,9 @@ export function GroupsGridView({
                   onDeleteGroup={(grp) => openGroupModal('delete', grp)}
                   onToggleComplete={async (taskId) => {
                     await toggleTaskComplete(taskId);
-                    await refresh();
+                    if (!isApiMode) {
+                      await refresh();
+                    }
                   }}
                   onEditTask={(task) => tasksOpenModal('edit', task.id)}
                   onMoveTask={(task) => tasksOpenModal('move', task.id)}
@@ -319,7 +321,7 @@ export function GroupsGridView({
         }
         group={groupModalState.group}
         onClose={closeGroupModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <GroupDeleteConfirmModal
@@ -344,8 +346,8 @@ export function GroupsGridView({
           setInlineGroupId(null);
           tasksCloseModal();
         }}
-        onSuccess={refresh}
-        onTagMutated={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
+        onTagMutated={isApiMode ? undefined : refresh}
       />
 
       <TaskMoveCopyModal
@@ -355,14 +357,14 @@ export function GroupsGridView({
         mode={taskModalState.type === 'move' ? 'move' : 'copy'}
         task={activeTaskModalTask}
         onClose={tasksCloseModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <TaskDeleteConfirmModal
         show={taskModalState.type === 'delete'}
         task={activeTaskModalTask}
         onClose={tasksCloseModal}
-        onSuccess={refresh}
+        onSuccess={isApiMode ? undefined : refresh}
       />
 
       <TaskTagRemovalModal
@@ -382,13 +384,17 @@ export function GroupsGridView({
               taskModalState.taskId,
               taskModalState.tagId,
             );
-            await refresh();
+            if (!isApiMode) {
+              await refresh();
+            }
           }
         }}
         onRemoveFromGroup={async () => {
           if (taskModalState.tagId) {
             await deleteTagFromGroup(taskModalState.tagId);
-            await refresh();
+            if (!isApiMode) {
+              await refresh();
+            }
           }
         }}
       />
