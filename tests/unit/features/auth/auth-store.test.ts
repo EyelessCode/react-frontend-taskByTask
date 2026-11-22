@@ -72,7 +72,7 @@ describe('useAuthStore', () => {
     expect(state.currentUser?.email).toBe('ana@example.com');
     expect(state.currentUser?.timeFormat).toBe('24h');
     expect(state.currentUser?.timeZone).toBe('America/Bogota');
-    expect(state.currentUser?.passwordHash.startsWith('pbkdf2_sha256$100000$')).toBe(true);
+    expect(state.currentUser?.passwordHash?.startsWith('pbkdf2_sha256$100000$')).toBe(true);
     expect(state.postRegisterCodesPending).toBe(true);
     expect(state.oneTimeRecoveryCodes).toHaveLength(LIMITS.RECOVERY_CODES_COUNT);
 

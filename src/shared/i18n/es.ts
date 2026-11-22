@@ -11,6 +11,7 @@ export interface LocalizationDictionary {
     back: string;
     close: string;
     loading: string;
+    loadingMore: string;
   };
   validation: {
     required: (field: string) => string;
@@ -27,6 +28,13 @@ export interface LocalizationDictionary {
     corruptedData: string;
     storageQuota: string;
     unexpected: string;
+    networkError: string;
+    serverError: string;
+    tooManyRequests: string;
+    rateLimitedMinutes: (minutes: number) => string;
+    rateLimitedSeconds: (seconds: number) => string;
+    invalidResponse: string;
+    forbidden: string;
   };
   dateTime: {
     overdue: string;
@@ -67,6 +75,12 @@ export interface NotificationsLocalization {
   dueAlertTitle: string;
   dueAlertWithTime: (title: string, date: string, time: string) => string;
   dueAlertDateOnly: (title: string, date: string) => string;
+  loadMoreNotifications: string;
+  pushDisabledByServer: string;
+  pushUnavailableStatus: string;
+  pushSubscriptionError: string;
+  pushFallbackTitle: string;
+  pushFallbackBody: string;
 }
 
 export interface AuthLocalization {
@@ -135,6 +149,7 @@ export interface AuthLocalization {
   regenerateDescription: string;
   regenerateButton: string;
   regeneratedCodesTitle: string;
+  remainingRecoveryCodes: (count: number) => string;
   dangerZoneTitle: string;
   deleteAccountButton: string;
   deleteAccountModalTitle: string;
@@ -193,6 +208,8 @@ export interface GroupsLocalization {
   emptySearchGlobal: string;
   noGroupsFound: string;
   taskCount: (count: number) => string;
+  loadMoreGroups: string;
+  taskCountAtLeast: (count: number) => string;
 }
 
 export interface TasksLocalization {
@@ -240,6 +257,7 @@ export interface TasksLocalization {
   emptyPending: string;
   emptyCompleted: string;
   emptyAll: string;
+  loadMoreTasks: string;
 }
 
 const tagsLocalization = {
@@ -273,6 +291,7 @@ export const es = {
     back: 'Volver',
     close: 'Cerrar',
     loading: 'Cargando...',
+    loadingMore: 'Cargando más...',
   },
   validation: {
     required: (field: string) => `El campo ${field} es obligatorio`,
@@ -289,6 +308,17 @@ export const es = {
     corruptedData: 'Los datos almacenados están dañados o tienen un formato no válido',
     storageQuota: 'El almacenamiento del navegador está lleno',
     unexpected: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
+    networkError: 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.',
+    serverError:
+      'El servidor no pudo completar la solicitud en este momento. Intenta de nuevo más tarde.',
+    tooManyRequests:
+      'Demasiadas solicitudes en poco tiempo. Espera un momento e intenta de nuevo.',
+    rateLimitedMinutes: (minutes: number) =>
+      `Demasiadas solicitudes. Espera ${minutes} min antes de intentar de nuevo.`,
+    rateLimitedSeconds: (seconds: number) =>
+      `Demasiadas solicitudes. Espera ${seconds} s antes de intentar de nuevo.`,
+    invalidResponse: 'La respuesta del servidor no tiene el formato esperado.',
+    forbidden: 'No tienes permiso para realizar esta acción.',
   },
   dateTime: {
     overdue: 'Vencida',
@@ -343,6 +373,7 @@ export const es = {
     emptyPending: 'No hay tareas pendientes en este grupo',
     emptyCompleted: 'No hay tareas completadas en este grupo',
     emptyAll: 'No hay tareas en este grupo',
+    loadMoreTasks: 'Cargar más tareas',
   },
   groups: {
     gridTitle: 'Mis Grupos',
@@ -369,6 +400,8 @@ export const es = {
     emptySearchGlobal: 'No se encontraron tareas con el título especificado.',
     noGroupsFound: 'No se encontraron grupos.',
     taskCount: (count: number) => `${count} ${count === 1 ? 'tarea' : 'tareas'}`,
+    loadMoreGroups: 'Cargar más grupos',
+    taskCountAtLeast: (count: number) => `${count}+ tareas`,
   },
   tags: tagsLocalization,
   auth: {
@@ -412,10 +445,12 @@ export const es = {
     recoverTitle: 'Recuperar contraseña',
     recoverSubtitle: 'Usa uno de tus códigos de recuperación de un solo uso',
     recoveryCodeLabel: 'Código de recuperación',
-    recoveryCodePlaceholder: 'Código de 8 caracteres',
+    recoveryCodePlaceholder: 'Ej. A1B2-C3D4 o 8 caracteres',
     recoveryCodeRequired: 'Ingresa un código de recuperación.',
-    recoveryCodeLengthError: 'El código de recuperación debe tener exactamente 8 caracteres.',
-    recoveryCodeFormatError: 'El código de recuperación solo puede contener letras y números.',
+    recoveryCodeLengthError:
+      'El código de recuperación debe tener exactamente 8 caracteres alfanuméricos (ej. A1B2-C3D4).',
+    recoveryCodeFormatError:
+      'El código de recuperación solo puede contener letras, números y un guion opcional en el formato XXXX-XXXX.',
     newPasswordLabel: 'Nueva contraseña',
     recoverButton: 'Restablecer contraseña',
     invalidRecoveryRequest: 'El correo o el código de recuperación no es válido o ya fue utilizado.',
@@ -442,6 +477,8 @@ export const es = {
       'Regenerar tus códigos invalida todos los códigos anteriores y genera 8 nuevos códigos mostrados una sola vez.',
     regenerateButton: 'Regenerar códigos',
     regeneratedCodesTitle: 'Nuevos códigos de recuperación',
+    remainingRecoveryCodes: (count: number) =>
+      `Códigos de recuperación disponibles: ${count} de 8`,
     dangerZoneTitle: 'Eliminar cuenta',
     deleteAccountButton: 'Eliminar mi cuenta',
     deleteAccountModalTitle: 'Eliminar cuenta permanentemente',
@@ -486,5 +523,14 @@ export const es = {
       `La tarea "${title}" vence el ${date} a las ${time}.`,
     dueAlertDateOnly: (title: string, date: string) =>
       `La tarea "${title}" vence el ${date}.`,
+    loadMoreNotifications: 'Cargar más notificaciones',
+    pushDisabledByServer:
+      'Los avisos emergentes del navegador están desactivados temporalmente en el servidor; seguirás recibiendo todas tus alertas aquí.',
+    pushUnavailableStatus:
+      'No se pudo verificar el estado de los avisos emergentes del servidor; seguirás viendo todas tus alertas aquí.',
+    pushSubscriptionError:
+      'No se pudo activar la suscripción de avisos emergentes en este navegador; seguirás viendo tus alertas aquí.',
+    pushFallbackTitle: 'Task by Task — Aviso de vencimiento',
+    pushFallbackBody: 'Tienes una nueva notificación de tarea pendiente.',
   },
 } as const satisfies LocalizationDictionary;

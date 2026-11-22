@@ -102,3 +102,81 @@ export class StorageQuotaError extends AppError {
     super(message, 'STORAGE_QUOTA_EXCEEDED', options);
   }
 }
+
+export interface ApiProblemInvalidParam {
+  name: string;
+  reason: string;
+}
+
+export interface ApiProblemDetails {
+  status: number;
+  title?: string;
+  detail?: string;
+  instance?: string;
+  invalidParams?: ApiProblemInvalidParam[];
+  retryAfterSeconds?: number;
+}
+
+export class ConfigurationError extends AppError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, 'CONFIGURATION_ERROR', options);
+  }
+}
+
+export class ApiProblemError extends AppError {
+  public readonly status: number;
+  public readonly title?: string;
+  public readonly detail?: string;
+  public readonly instance?: string;
+  public readonly invalidParams: ApiProblemInvalidParam[];
+  public readonly retryAfterSeconds?: number;
+
+  constructor(
+    message: string,
+    problem: ApiProblemDetails,
+    options?: ErrorOptions,
+  ) {
+    super(message, 'API_PROBLEM', options);
+    this.status = problem.status;
+    this.title = problem.title;
+    this.detail = problem.detail;
+    this.instance = problem.instance;
+    this.invalidParams = problem.invalidParams ?? [];
+    this.retryAfterSeconds = problem.retryAfterSeconds;
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  public readonly problem?: ApiProblemDetails;
+
+  constructor(
+    message: string = es.auth.invalidCredentials,
+    problem?: ApiProblemDetails,
+    options?: ErrorOptions,
+  ) {
+    super(message, 'UNAUTHORIZED', options);
+    this.problem = problem;
+  }
+}
+
+export class RateLimitError extends AppError {
+  public readonly retryAfterSeconds?: number;
+  public readonly detail?: string;
+
+  constructor(
+    message: string,
+    retryAfterSeconds?: number,
+    detail?: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, 'RATE_LIMIT', options);
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.detail = detail;
+  }
+}
+
+export class NetworkError extends AppError {
+  constructor(message: string = es.errors.networkError, options?: ErrorOptions) {
+    super(message, 'NETWORK_ERROR', options);
+  }
+}

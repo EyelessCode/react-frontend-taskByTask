@@ -6,6 +6,8 @@ import {
   GROUP_ROLES,
   rawPasswordSchema,
   userSchema,
+  localUserSchema,
+  isoDateTimeSchema,
   recoveryCodeSchema,
   sessionSchema,
   loginLockoutSchema,
@@ -69,10 +71,22 @@ describe('Appendix B Canonical Limits and Schemas', () => {
       expect(LIMITS.SESSION_DURATION_DAYS).toBe(7);
       expect(LIMITS.INVITATION_EXPIRATION_HOURS).toBe(24);
       expect(LIMITS.NOTIFICATION_RETENTION_DAYS).toBe(30);
+      expect(LIMITS.API_EMAIL_MAX).toBe(255);
+      expect(LIMITS.KEYSET_PAGE_LIMIT_DEFAULT).toBe(20);
+      expect(LIMITS.KEYSET_PAGE_LIMIT_MAX).toBe(50);
 
       expect(FORBIDDEN_TAG_CHARACTERS).toEqual([';', ',']);
       expect(REMINDER_OFFSETS).toEqual(['15m', '30m', '1h', '6h', '1d']);
       expect(GROUP_ROLES).toEqual(['creator', 'gestor', 'visitante']);
+    });
+
+    it('should validate ISO-8601 timestamps with up to 9 fractional digits and timezone offsets', () => {
+      expect(isoDateTimeSchema.safeParse('2026-11-02T12:00:00Z').success).toBe(true);
+      expect(isoDateTimeSchema.safeParse('2026-11-02T12:00:00.123Z').success).toBe(true);
+      expect(isoDateTimeSchema.safeParse('2026-11-02T12:00:00.123456789Z').success).toBe(true);
+      expect(isoDateTimeSchema.safeParse('2026-11-02T12:00:00+02:00').success).toBe(true);
+      expect(isoDateTimeSchema.safeParse('2026-11-02T12:00:00.123456-05:00').success).toBe(true);
+      expect(isoDateTimeSchema.safeParse('2026-11-02 12:00:00Z').success).toBe(false);
     });
   });
 
@@ -179,7 +193,28 @@ describe('Appendix B Canonical Limits and Schemas', () => {
       expect(withSpaces.success).toBe(false);
     });
 
-    it('should require passwordHash and reject plaintext password property (RNF-05)', () => {
+    it('should allow optional passwordHash and remainingRecoveryCodes on userSchema while localUserSchema requires passwordHash and both reject plaintext password', () => {
+      const apiUser = {
+        id: 'usr-1',
+        email: `${'a'.repeat(243)}@example.com`,
+        username: 'validUser123',
+        displayName: 'User Name',
+        timeZone: 'America/Bogota',
+        timeFormat: '24h' as const,
+        remainingRecoveryCodes: 8,
+        createdAt: '2026-11-02T12:00:00.123456789Z',
+      };
+      expect(apiUser.email.length).toBe(255);
+      expect(userSchema.safeParse(apiUser).success).toBe(true);
+      expect(localUserSchema.safeParse(apiUser).success).toBe(false);
+
+      expect(
+        userSchema.safeParse({ ...apiUser, remainingRecoveryCodes: -1 }).success,
+      ).toBe(false);
+      expect(
+        userSchema.safeParse({ ...apiUser, remainingRecoveryCodes: 9 }).success,
+      ).toBe(false);
+
       const withPlaintext = userSchema.safeParse({
         id: 'usr-1',
         email: 'user@example.com',
@@ -192,6 +227,19 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         createdAt: '2026-11-02T12:00:00.000Z',
       });
       expect(withPlaintext.success).toBe(false);
+
+      const localWithPlaintext = localUserSchema.safeParse({
+        id: 'usr-1',
+        email: 'user@example.com',
+        username: 'validUser123',
+        displayName: 'User Name',
+        password: 'plaintext_password_here',
+        passwordHash: 'hash',
+        timeZone: 'America/Bogota',
+        timeFormat: '24h',
+        createdAt: '2026-11-02T12:00:00.000Z',
+      });
+      expect(localWithPlaintext.success).toBe(false);
     });
 
     it('should validate RecoveryCode schema with 8-character token', () => {
@@ -369,6 +417,7 @@ describe('Appendix B Canonical Limits and Schemas', () => {
         dueDate: '2026-11-15',
         dueTime: '14:30',
         assigneeId: null,
+        overdue: true,
         subtasks: [subtask],
         reminders: [reminder],
       };

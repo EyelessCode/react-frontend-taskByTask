@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from 'react-bootstrap/Alert';
@@ -17,7 +18,7 @@ export function RecoverPasswordPage({
   onSuccess,
   onNavigateToLogin,
 }: RecoverPasswordPageProps) {
-  const { recoverPassword, isSubmitting, authError, clearAuthError } = useAuth();
+  const { recoverPassword, isSubmitting, authError, fieldErrors, clearAuthError } = useAuth();
 
   const form = useForm<RecoverFormValues>({
     resolver: zodResolver(recoverFormSchema),
@@ -27,6 +28,18 @@ export function RecoverPasswordPage({
       newPassword: '',
     },
   });
+
+  const { setError } = form;
+
+  useEffect(() => {
+    const fields: Array<keyof RecoverFormValues> = ['email', 'recoveryCode', 'newPassword'];
+    for (const field of fields) {
+      const message = fieldErrors[field];
+      if (message) {
+        setError(field, { type: 'server', message });
+      }
+    }
+  }, [fieldErrors, setError]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     clearAuthError();

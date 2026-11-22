@@ -33,6 +33,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.common.back).toBe('Volver');
       expect(es.common.close).toBe('Cerrar');
       expect(es.common.loading).toBe('Cargando...');
+      expect(es.common.loadingMore).toBe('Cargando más...');
     });
   });
 
@@ -88,6 +89,25 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.errors.unexpected).toBe(
         'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
       );
+      expect(es.errors.networkError).toBe(
+        'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.',
+      );
+      expect(es.errors.serverError).toBe(
+        'El servidor no pudo completar la solicitud en este momento. Intenta de nuevo más tarde.',
+      );
+      expect(es.errors.tooManyRequests).toBe(
+        'Demasiadas solicitudes en poco tiempo. Espera un momento e intenta de nuevo.',
+      );
+      expect(es.errors.rateLimitedMinutes(3)).toBe(
+        'Demasiadas solicitudes. Espera 3 min antes de intentar de nuevo.',
+      );
+      expect(es.errors.rateLimitedSeconds(45)).toBe(
+        'Demasiadas solicitudes. Espera 45 s antes de intentar de nuevo.',
+      );
+      expect(es.errors.invalidResponse).toBe(
+        'La respuesta del servidor no tiene el formato esperado.',
+      );
+      expect(es.errors.forbidden).toBe('No tienes permiso para realizar esta acción.');
     });
   });
 
@@ -143,6 +163,7 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.tasks.emptyPending).toBe('No hay tareas pendientes en este grupo');
       expect(es.tasks.emptyCompleted).toBe('No hay tareas completadas en este grupo');
       expect(es.tasks.emptyAll).toBe('No hay tareas en este grupo');
+      expect(es.tasks.loadMoreTasks).toBe('Cargar más tareas');
     });
 
     it('should format tag overflow indicator correctly', () => {
@@ -238,6 +259,8 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       expect(es.groups.taskCount(0)).toBe('0 tareas');
       expect(es.groups.taskCount(1)).toBe('1 tarea');
       expect(es.groups.taskCount(5)).toBe('5 tareas');
+      expect(es.groups.loadMoreGroups).toBe('Cargar más grupos');
+      expect(es.groups.taskCountAtLeast(20)).toBe('20+ tareas');
     });
   });
 
@@ -297,13 +320,16 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
         'Usa uno de tus códigos de recuperación de un solo uso',
       );
       expect(es.auth.recoveryCodeLabel).toBe('Código de recuperación');
-      expect(es.auth.recoveryCodePlaceholder).toBe('Código de 8 caracteres');
+      expect(es.auth.recoveryCodePlaceholder).toBe('Ej. A1B2-C3D4 o 8 caracteres');
       expect(es.auth.recoveryCodeRequired).toBe('Ingresa un código de recuperación.');
       expect(es.auth.recoveryCodeLengthError).toBe(
-        'El código de recuperación debe tener exactamente 8 caracteres.',
+        'El código de recuperación debe tener exactamente 8 caracteres alfanuméricos (ej. A1B2-C3D4).',
       );
       expect(es.auth.recoveryCodeFormatError).toBe(
-        'El código de recuperación solo puede contener letras y números.',
+        'El código de recuperación solo puede contener letras, números y un guion opcional en el formato XXXX-XXXX.',
+      );
+      expect(es.auth.remainingRecoveryCodes(5)).toBe(
+        'Códigos de recuperación disponibles: 5 de 8',
       );
       expect(es.auth.newPasswordLabel).toBe('Nueva contraseña');
       expect(es.auth.recoverButton).toBe('Restablecer contraseña');
@@ -414,6 +440,23 @@ describe('Spanish Localization Dictionary (i18n/es.ts)', () => {
       );
       expect(es.notifications.dueAlertDateOnly('Estudiar', '25/12/2026')).toBe(
         'La tarea "Estudiar" vence el 25/12/2026.',
+      );
+    });
+
+    it('should expose pagination and Web Push status/fallback copy (006-backend-integration, RNF-14)', () => {
+      expect(es.notifications.loadMoreNotifications).toBe('Cargar más notificaciones');
+      expect(es.notifications.pushDisabledByServer).toBe(
+        'Los avisos emergentes del navegador están desactivados temporalmente en el servidor; seguirás recibiendo todas tus alertas aquí.',
+      );
+      expect(es.notifications.pushUnavailableStatus).toBe(
+        'No se pudo verificar el estado de los avisos emergentes del servidor; seguirás viendo todas tus alertas aquí.',
+      );
+      expect(es.notifications.pushSubscriptionError).toBe(
+        'No se pudo activar la suscripción de avisos emergentes en este navegador; seguirás viendo tus alertas aquí.',
+      );
+      expect(es.notifications.pushFallbackTitle).toBe('Task by Task — Aviso de vencimiento');
+      expect(es.notifications.pushFallbackBody).toBe(
+        'Tienes una nueva notificación de tarea pendiente.',
       );
     });
   });

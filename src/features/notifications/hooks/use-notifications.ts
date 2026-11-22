@@ -9,6 +9,9 @@ export function useNotifications() {
   );
   const isCenterOpen = useNotificationsStore((state) => state.isCenterOpen);
   const isLoading = useNotificationsStore((state) => state.isLoading);
+  const isLoadingMore = useNotificationsStore((state) => state.isLoadingMore);
+  const hasNext = useNotificationsStore((state) => state.hasNext);
+  const pushStatus = useNotificationsStore((state) => state.pushStatus);
   const error = useNotificationsStore((state) => state.error);
 
   const init = useNotificationsStore((state) => state.init);
@@ -22,6 +25,7 @@ export function useNotifications() {
   const markAsRead = useNotificationsStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationsStore((state) => state.markAllAsRead);
   const deleteNotification = useNotificationsStore((state) => state.deleteNotification);
+  const loadMoreNotifications = useNotificationsStore((state) => state.loadMoreNotifications);
 
   return {
     notifications,
@@ -30,6 +34,9 @@ export function useNotifications() {
     isPermissionBannerVisible,
     isCenterOpen,
     isLoading,
+    isLoadingMore,
+    hasNext,
+    pushStatus,
     error,
     init,
     refresh,
@@ -40,5 +47,6 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    loadMoreNotifications,
   };
 }

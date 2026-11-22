@@ -21,8 +21,17 @@ export function TaskMoveCopyModal({
   onClose,
   onSuccess,
 }: TaskMoveCopyModalProps) {
-  const { targetGroups, hasOtherGroups, moveTask, copyTask } = useTaskMoveCopy({
+  const {
+    targetGroups,
+    hasOtherGroups,
+    groupsHasNext,
+    isLoadingMoreGroups,
+    loadMoreGroups,
+    moveTask,
+    copyTask,
+  } = useTaskMoveCopy({
     task,
+    mode,
     onSuccess,
   });
 
@@ -55,11 +64,12 @@ export function TaskMoveCopyModal({
       </Modal.Header>
 
       <Modal.Body>
-        {!hasOtherGroups ? (
+        {!hasOtherGroups && !groupsHasNext && (
           <div className="alert alert-info py-2 px-3 small mb-0">
             {es.tasks.noOtherGroups}
           </div>
-        ) : (
+        )}
+        {hasOtherGroups && (
           <Form.Group className="mb-2">
             <Form.Label htmlFor="destination-group-select">
               {es.tasks.selectGroupLabel}
@@ -76,6 +86,21 @@ export function TaskMoveCopyModal({
               ))}
             </Form.Select>
           </Form.Group>
+        )}
+        {groupsHasNext && (
+          <div className={hasOtherGroups ? 'mt-2' : ''}>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="w-100"
+              disabled={isLoadingMoreGroups}
+              onClick={() => {
+                void loadMoreGroups();
+              }}
+            >
+              {isLoadingMoreGroups ? es.common.loadingMore : es.groups.loadMoreGroups}
+            </Button>
+          </div>
         )}
       </Modal.Body>
 

@@ -12,6 +12,11 @@ export interface GroupsFilterToolbarProps {
   searchQuery: string;
   activeFilter: TaskFilter;
   counts: { pending: number; completed: number; all: number };
+  isApiMode?: boolean;
+  activeTabHasMore?: boolean;
+  groupsHasNext?: boolean;
+  isLoadingMoreGroups?: boolean;
+  onLoadMoreGroups?: () => void;
   onSearchChange: (query: string) => void;
   onFilterChange: (filter: TaskFilter) => void;
   onToggleGroup: (groupId: string) => void;
@@ -27,6 +32,11 @@ export function GroupsFilterToolbar({
   searchQuery,
   activeFilter,
   counts,
+  isApiMode = false,
+  activeTabHasMore = false,
+  groupsHasNext = false,
+  isLoadingMoreGroups = false,
+  onLoadMoreGroups,
   onSearchChange,
   onFilterChange,
   onToggleGroup,
@@ -35,6 +45,16 @@ export function GroupsFilterToolbar({
   onRefresh,
   isRefreshing = false,
 }: GroupsFilterToolbarProps) {
+  const formatTabLabel = (filter: TaskFilter, baseLabel: string, count: number): string => {
+    if (!isApiMode) {
+      return `${baseLabel} (${count})`;
+    }
+    if (activeFilter !== filter) {
+      return baseLabel;
+    }
+    return `${baseLabel} (${count}${activeTabHasMore ? '+' : ''})`;
+  };
+
   return (
     <div className="d-flex flex-column gap-3 mb-4">
       {/* Top Row: Search Input & Action Buttons */}
@@ -90,7 +110,7 @@ export function GroupsFilterToolbar({
               role="tab"
               aria-selected={activeFilter === 'pendientes'}
             >
-              Pendientes ({counts.pending})
+              {formatTabLabel('pendientes', es.tasks.filterPending, counts.pending)}
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
@@ -101,7 +121,7 @@ export function GroupsFilterToolbar({
               role="tab"
               aria-selected={activeFilter === 'completadas'}
             >
-              Completadas ({counts.completed})
+              {formatTabLabel('completadas', es.tasks.filterCompleted, counts.completed)}
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>
@@ -112,7 +132,7 @@ export function GroupsFilterToolbar({
               role="tab"
               aria-selected={activeFilter === 'todas'}
             >
-              Todas ({counts.all})
+              {formatTabLabel('todas', es.tasks.filterAll, counts.all)}
             </Nav.Link>
           </Nav.Item>
         </Nav>
@@ -145,6 +165,17 @@ export function GroupsFilterToolbar({
             </Button>
           );
         })}
+        {groupsHasNext && onLoadMoreGroups && (
+          <Button
+            variant="outline-primary"
+            size="sm"
+            className="rounded-pill px-3"
+            disabled={isLoadingMoreGroups}
+            onClick={onLoadMoreGroups}
+          >
+            {isLoadingMoreGroups ? es.common.loadingMore : es.groups.loadMoreGroups}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useWatch } from 'react-hook-form';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import Alert from 'react-bootstrap/Alert';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { useTaskForm } from '../hooks/use-task-form';
@@ -61,7 +62,7 @@ export function TaskFormModal({
   const removeTagFromTask = useTasksStore((state) => state.removeTagFromTask);
   const deleteTagFromGroup = useTasksStore((state) => state.deleteTagFromGroup);
 
-  const { form, isEdit, onSubmit, groupTags, persistedTagNames } = useTaskForm({
+  const { form, isEdit, onSubmit, groupTags, persistedTagNames, apiError } = useTaskForm({
     task,
     defaultGroupId,
     show,
@@ -161,6 +162,11 @@ export function TaskFormModal({
           </Modal.Header>
 
           <Modal.Body>
+            {apiError && (
+              <Alert variant="danger" role="alert" className="py-2 small">
+                {apiError}
+              </Alert>
+            )}
             {/* Title */}
             <Form.Group className="mb-3">
               <Form.Label htmlFor="task-title-input">

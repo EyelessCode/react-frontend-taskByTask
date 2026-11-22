@@ -9,6 +9,9 @@ export interface GroupCardProps {
   group: Group;
   tasks: Task[];
   tags?: Tag[];
+  hasMoreTasks?: boolean;
+  isLoadingMoreTasks?: boolean;
+  onLoadMoreTasks?: (groupId: string) => void;
   onAddTask?: (groupId: string) => void;
   onRenameGroup?: (group: Group) => void;
   onDeleteGroup?: (group: Group) => void;
@@ -27,6 +30,9 @@ export function GroupCard({
   group,
   tasks,
   tags = [],
+  hasMoreTasks = false,
+  isLoadingMoreTasks = false,
+  onLoadMoreTasks,
   onAddTask,
   onRenameGroup,
   onDeleteGroup,
@@ -54,7 +60,9 @@ export function GroupCard({
               </Badge>
             )}
             <Badge bg="secondary">
-              {es.groups.taskCount(tasks.length)}
+              {hasMoreTasks
+                ? es.groups.taskCountAtLeast(tasks.length)
+                : es.groups.taskCount(tasks.length)}
             </Badge>
           </div>
 
@@ -110,6 +118,19 @@ export function GroupCard({
             ))
           )}
         </div>
+
+        {hasMoreTasks && onLoadMoreTasks && (
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="w-100 mt-2"
+            disabled={isLoadingMoreTasks}
+            aria-label={`${es.tasks.loadMoreTasks} (${group.name})`}
+            onClick={() => onLoadMoreTasks(group.id)}
+          >
+            {isLoadingMoreTasks ? es.common.loadingMore : es.tasks.loadMoreTasks}
+          </Button>
+        )}
 
         {/* Inline Add Task Button */}
         <Button

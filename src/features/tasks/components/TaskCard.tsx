@@ -38,13 +38,17 @@ export function TaskCard({
   now,
   timeZone,
 }: TaskCardProps) {
-  const overdue = isTaskOverdue({
-    dueDate: task.dueDate,
-    dueTime: task.dueTime,
-    completed: task.completed,
-    now,
-    timeZone,
-  });
+  const overdue = task.completed
+    ? false
+    : typeof task.overdue === 'boolean'
+      ? task.overdue
+      : isTaskOverdue({
+          dueDate: task.dueDate,
+          dueTime: task.dueTime,
+          completed: task.completed,
+          now,
+          timeZone,
+        });
 
   // Resolve tags by tagIds scoped to task's group
   const resolvedTags = resolveTaskTags(task.tagIds, tags, task.groupId);

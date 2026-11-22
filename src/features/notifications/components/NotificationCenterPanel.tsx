@@ -13,11 +13,15 @@ export function NotificationCenterPanel() {
     unreadCount,
     permissionState,
     isCenterOpen,
+    isLoadingMore,
+    hasNext,
+    pushStatus,
     closeCenter,
     requestPermission,
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    loadMoreNotifications,
   } = useNotifications();
 
   const timeZone = currentUser?.timeZone ?? 'UTC';
@@ -37,45 +41,59 @@ export function NotificationCenterPanel() {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* Discrete Browser Permission Status Section (RF-27, REQ-NT-14) */}
+        {/* Discrete Browser Permission Status Section (RF-27, REQ-NT-14, REQ-BI-21) */}
         <div className="p-2 mb-3 bg-light rounded border small">
-          {permissionState === 'granted' && (
-            <div className="text-success fw-medium">
-              {es.notifications.permissionGrantedStatus}
+          {pushStatus === 'disabled-by-server' ? (
+            <div className="text-muted" role="status">
+              {es.notifications.pushDisabledByServer}
             </div>
-          )}
-
-          {permissionState === 'default' && (
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <span className="text-secondary fw-medium">
-                {es.notifications.permissionDefaultStatus}
-              </span>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                type="button"
-                onClick={() => {
-                  void requestPermission();
-                }}
-              >
-                {es.notifications.enableNotificationsButton}
-              </Button>
+          ) : pushStatus === 'unavailable' ? (
+            <div className="text-muted" role="status">
+              {es.notifications.pushUnavailableStatus}
             </div>
-          )}
-
-          {permissionState === 'denied' && (
-            <div>
-              <div className="text-warning-emphasis fw-semibold mb-1">
-                {es.notifications.permissionDeniedStatus}
-              </div>
-              <div className="text-muted">
-                {es.notifications.permissionBlockedInstructions}
-              </div>
+          ) : pushStatus === 'subscription-error' ? (
+            <div className="text-warning-emphasis" role="status">
+              {es.notifications.pushSubscriptionError}
             </div>
-          )}
-
-          {permissionState === 'unsupported' && (
+          ) : pushStatus === 'unsupported' || permissionState === 'unsupported' ? (
             <div className="text-muted">{es.notifications.permissionUnsupportedNote}</div>
+          ) : (
+            <>
+              {permissionState === 'granted' && (
+                <div className="text-success fw-medium">
+                  {es.notifications.permissionGrantedStatus}
+                </div>
+              )}
+
+              {permissionState === 'default' && (
+                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <span className="text-secondary fw-medium">
+                    {es.notifications.permissionDefaultStatus}
+                  </span>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      void requestPermission();
+                    }}
+                  >
+                    {es.notifications.enableNotificationsButton}
+                  </Button>
+                </div>
+              )}
+
+              {permissionState === 'denied' && (
+                <div>
+                  <div className="text-warning-emphasis fw-semibold mb-1">
+                    {es.notifications.permissionDeniedStatus}
+                  </div>
+                  <div className="text-muted">
+                    {es.notifications.permissionBlockedInstructions}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -146,6 +164,23 @@ export function NotificationCenterPanel() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {hasNext && (
+          <div className="mt-3">
+            <Button
+              variant="outline-primary"
+              size="sm"
+              type="button"
+              className="w-100"
+              disabled={isLoadingMore}
+              onClick={() => {
+                void loadMoreNotifications();
+              }}
+            >
+              {isLoadingMore ? es.common.loadingMore : es.notifications.loadMoreNotifications}
+            </Button>
           </div>
         )}
       </Modal.Body>
