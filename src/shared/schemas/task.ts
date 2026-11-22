@@ -59,6 +59,7 @@ export const taskSchema = z.object({
   dueDate: dueDateSchema.nullable().optional(),
   dueTime: dueTimeSchema.nullable().optional(),
   assigneeId: z.string().nullable().optional(),
+  overdue: z.boolean().optional(),
   subtasks: z.array(subtaskSchema).max(LIMITS.SUBTASKS_MAX_COUNT).optional(),
   reminders: z.array(reminderSchema).max(LIMITS.REMINDERS_MAX_COUNT).optional(),
 });
@@ -75,6 +76,7 @@ export interface Task {
   dueDate?: string | null;
   dueTime?: string | null;
   assigneeId?: string | null;
+  overdue?: boolean;
   subtasks?: Subtask[];
   reminders?: Reminder[];
 }

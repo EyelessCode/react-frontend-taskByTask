@@ -332,7 +332,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     const user = await deps.userRepository.getByEmail(normalizedEmail);
-    const passwordMatches = user
+    const passwordMatches = user?.passwordHash
       ? await verifyPassword(parsed.data.password, user.passwordHash, deps.cryptoProvider)
       : false;
 
@@ -511,11 +511,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
-    const matches = await verifyPassword(
-      parsed.data.currentPassword,
-      user.passwordHash,
-      deps.cryptoProvider,
-    );
+    const matches = user.passwordHash
+      ? await verifyPassword(
+          parsed.data.currentPassword,
+          user.passwordHash,
+          deps.cryptoProvider,
+        )
+      : false;
     if (!matches) {
       set({ isSubmitting: false, authError: es.auth.invalidCurrentPassword });
       return false;
@@ -568,11 +570,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
-    const matches = await verifyPassword(
-      parsed.data.currentPassword,
-      user.passwordHash,
-      deps.cryptoProvider,
-    );
+    const matches = user.passwordHash
+      ? await verifyPassword(
+          parsed.data.currentPassword,
+          user.passwordHash,
+          deps.cryptoProvider,
+        )
+      : false;
     if (!matches) {
       set({ isSubmitting: false, authError: es.auth.invalidCurrentPassword });
       return false;
@@ -614,11 +618,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     }
 
-    const matches = await verifyPassword(
-      parsed.data.currentPassword,
-      user.passwordHash,
-      deps.cryptoProvider,
-    );
+    const matches = user.passwordHash
+      ? await verifyPassword(
+          parsed.data.currentPassword,
+          user.passwordHash,
+          deps.cryptoProvider,
+        )
+      : false;
     if (!matches) {
       set({ isSubmitting: false, authError: es.auth.invalidCurrentPassword });
       return false;

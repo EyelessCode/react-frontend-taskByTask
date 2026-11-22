@@ -8,7 +8,7 @@
 
 ## Task List
 
-- [ ] **T1: Persistence Config, Vite Dev Proxy, Error Hierarchy, Spanish Localization & Shared Schema Refinements (`RNF-08`, `RNF-14`, `RNF-19`, `RNF-20`)**
+- [x] **T1: Persistence Config, Vite Dev Proxy, Error Hierarchy, Spanish Localization & Shared Schema Refinements (`RNF-08`, `RNF-14`, `RNF-19`, `RNF-20`)**
   - **Associated Requirements:** `REQ-BI-01`, `REQ-BI-02`, `REQ-BI-17(7)`, `REQ-BI-23`, `REQ-BI-24`, `AC-BI-01`, Section 4.1, Section 4.3
   - **Files Touched:**
     - `tests/unit/shared/config/persistence.test.ts` (created — unit tests for `'localStorage'` default when unset/empty, `'api'` selection, deterministic `ConfigurationError` on invalid mode, and `VITE_API_BASE_URL` trailing-slash normalization)
