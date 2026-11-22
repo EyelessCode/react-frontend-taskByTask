@@ -75,7 +75,7 @@
   - **Done when:** All new API-mode auth tests AND all existing `localStorage` auth unit/integration tests pass cleanly.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T6: Auth & Profile UI Integration (`RF-01`..`RF-05`, `UI-06`, `UI-07`, `RNF-07`, `RNF-12`, `RNF-14`)**
+- [x] **T6: Auth & Profile UI Integration (`RF-01`..`RF-05`, `UI-06`, `UI-07`, `RNF-07`, `RNF-12`, `RNF-14`)**
   - **Associated Requirements:** `REQ-BI-06`, `REQ-BI-11`, `REQ-BI-13`, `REQ-BI-14`, `REQ-BI-24`, `AC-BI-03`, `AC-BI-05`, `AC-BI-10`
   - **Files Touched:**
     - `tests/unit/features/auth/auth-pages-api-errors.test.tsx` (created — RTL tests verifying `400` `invalidParams` field error mapping across `LoginPage`, `RegisterPage`, `RecoverPasswordPage`, and `ProfilePage`, `oneTimeRecoveryCodesNotice` display in `OneTimeRecoveryCodesCard`, and `remainingRecoveryCodes` display on `ProfilePage`)

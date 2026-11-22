@@ -34,7 +34,9 @@ export function ProfilePage({
     currentUser,
     isSubmitting,
     authError,
+    fieldErrors,
     oneTimeRecoveryCodes,
+    oneTimeRecoveryCodesNotice,
     updateProfile,
     changePassword,
     regenerateRecoveryCodes,
@@ -47,6 +49,9 @@ export function ProfilePage({
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activeErrorForm, setActiveErrorForm] = useState<
+    'profile' | 'password' | 'regen' | null
+  >(null);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -86,6 +91,43 @@ export function ProfilePage({
     },
   });
 
+  const { setError: setProfileError } = profileForm;
+  const { setError: setPasswordError } = passwordForm;
+  const { setError: setRegenError } = regenForm;
+
+  useEffect(() => {
+    if (activeErrorForm === 'profile') {
+      const fields: Array<keyof ProfileFormValues> = [
+        'displayName',
+        'username',
+        'email',
+        'timeFormat',
+      ];
+      for (const field of fields) {
+        const message = fieldErrors[field];
+        if (message) {
+          setProfileError(field, { type: 'server', message });
+        }
+      }
+    } else if (activeErrorForm === 'password') {
+      const fields: Array<keyof ChangePasswordFormValues> = [
+        'currentPassword',
+        'newPassword',
+      ];
+      for (const field of fields) {
+        const message = fieldErrors[field];
+        if (message) {
+          setPasswordError(field, { type: 'server', message });
+        }
+      }
+    } else if (activeErrorForm === 'regen') {
+      const message = fieldErrors.currentPassword;
+      if (message) {
+        setRegenError('currentPassword', { type: 'server', message });
+      }
+    }
+  }, [activeErrorForm, fieldErrors, setPasswordError, setProfileError, setRegenError]);
+
   useEffect(() => {
     return () => {
       dismissOneTimeRecoveryCodes();
@@ -95,27 +137,33 @@ export function ProfilePage({
   const handleProfileSubmit = profileForm.handleSubmit(async (values) => {
     clearAuthError();
     setProfileSuccess(false);
+    setActiveErrorForm('profile');
     const ok = await updateProfile(values);
     if (ok) {
       setProfileSuccess(true);
+      setActiveErrorForm(null);
     }
   });
 
   const handlePasswordSubmit = passwordForm.handleSubmit(async (values) => {
     clearAuthError();
     setPasswordSuccess(false);
+    setActiveErrorForm('password');
     const ok = await changePassword(values);
     if (ok) {
       passwordForm.reset({ currentPassword: '', newPassword: '' });
       setPasswordSuccess(true);
+      setActiveErrorForm(null);
     }
   });
 
   const handleRegenerateSubmit = regenForm.handleSubmit(async (values) => {
     clearAuthError();
+    setActiveErrorForm('regen');
     const ok = await regenerateRecoveryCodes(values);
     if (ok) {
       regenForm.reset({ currentPassword: '' });
+      setActiveErrorForm(null);
     }
   });
 
@@ -323,7 +371,12 @@ export function ProfilePage({
         <Card className="shadow-sm border-0">
           <Card.Body className="p-4">
             <h2 className="h5 fw-semibold mb-2">{es.auth.regenerateSectionTitle}</h2>
-            <p className="text-muted small mb-3">{es.auth.regenerateDescription}</p>
+            <p className="text-muted small mb-2">{es.auth.regenerateDescription}</p>
+            {typeof currentUser?.remainingRecoveryCodes === 'number' && (
+              <p className="small fw-medium mb-3">
+                {es.auth.remainingRecoveryCodes(currentUser.remainingRecoveryCodes)}
+              </p>
+            )}
 
             <Form onSubmit={handleRegenerateSubmit} noValidate className="mb-3">
               <Form.Group className="mb-3">
@@ -352,6 +405,7 @@ export function ProfilePage({
               <OneTimeRecoveryCodesCard
                 codes={oneTimeRecoveryCodes}
                 title={es.auth.regeneratedCodesTitle}
+                warningMessage={oneTimeRecoveryCodesNotice ?? undefined}
                 continueLabel={es.common.close}
                 onContinue={dismissOneTimeRecoveryCodes}
               />

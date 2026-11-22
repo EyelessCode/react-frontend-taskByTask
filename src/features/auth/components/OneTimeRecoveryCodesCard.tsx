@@ -8,6 +8,7 @@ import { es } from '../../../shared/i18n';
 export interface OneTimeRecoveryCodesCardProps {
   codes: string[];
   title?: string;
+  warningMessage?: string;
   continueLabel?: string;
   onContinue: () => void;
 }
@@ -18,6 +19,7 @@ export interface OneTimeRecoveryCodesCardProps {
 export function OneTimeRecoveryCodesCard({
   codes,
   title,
+  warningMessage,
   continueLabel = es.auth.continueToApp,
   onContinue,
 }: OneTimeRecoveryCodesCardProps) {
@@ -36,7 +38,7 @@ export function OneTimeRecoveryCodesCard({
     <div>
       {title && <h3 className="h6 fw-semibold mb-2">{title}</h3>}
       <Alert variant="warning" className="small">
-        {es.auth.recoveryCodesWarning}
+        {warningMessage || es.auth.recoveryCodesWarning}
       </Alert>
 
       <Row xs={2} className="g-2 mb-3">

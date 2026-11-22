@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from 'react-bootstrap/Alert';
@@ -19,7 +20,9 @@ export function RegisterPage({ onContinueToApp, onNavigateToLogin }: RegisterPag
     register: registerAccount,
     isSubmitting,
     authError,
+    fieldErrors,
     oneTimeRecoveryCodes,
+    oneTimeRecoveryCodesNotice,
     postRegisterCodesPending,
     acknowledgeRegistrationCodes,
     clearAuthError,
@@ -35,11 +38,29 @@ export function RegisterPage({ onContinueToApp, onNavigateToLogin }: RegisterPag
     },
   });
 
+  const { setError } = form;
+
+  useEffect(() => {
+    const fields: Array<keyof RegisterFormValues> = [
+      'email',
+      'username',
+      'displayName',
+      'password',
+    ];
+    for (const field of fields) {
+      const message = fieldErrors[field];
+      if (message) {
+        setError(field, { type: 'server', message });
+      }
+    }
+  }, [fieldErrors, setError]);
+
   if (postRegisterCodesPending && oneTimeRecoveryCodes) {
     return (
       <AuthLayout title={es.auth.recoveryCodesTitle}>
         <OneTimeRecoveryCodesCard
           codes={oneTimeRecoveryCodes}
+          warningMessage={oneTimeRecoveryCodesNotice ?? undefined}
           onContinue={() => {
             acknowledgeRegistrationCodes();
             onContinueToApp?.();
