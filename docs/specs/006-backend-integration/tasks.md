@@ -47,7 +47,7 @@
   - **Done when:** All OpenAPI DTO schemas and domain mappers pass unit tests, typecheck, and lint.
   - **Verification Command:** `npm test && npm run typecheck && npm run lint`
 
-- [ ] **T4: Typed HTTP API Repositories Covering All 27 Paths / 37 Operations (`RF-01`..`RF-07`, `RF-12`..`RF-16`, `RF-22`, `RF-24`, `RF-25`, `RF-27`..`RF-29`)**
+- [x] **T4: Typed HTTP API Repositories Covering All 27 Paths / 37 Operations (`RF-01`..`RF-07`, `RF-12`..`RF-16`, `RF-22`, `RF-24`, `RF-25`, `RF-27`..`RF-29`)**
   - **Associated Requirements:** `REQ-BI-10`..`REQ-BI-22`, `AC-BI-02`, `AC-BI-05`..`AC-BI-09`, Section 4.1 Endpoint Table
   - **Files Touched:**
     - `tests/unit/data/api/api-repositories.test.ts` (created — contract tests using mock `fetch` asserting exact HTTP method, path, query params, headers, request JSON body, and mapped output for all 37 OpenAPI operations across Auth, Users, Groups, Tasks, Tags, Notifications, and Web Push)
